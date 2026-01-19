@@ -8,9 +8,97 @@ let isDraggingIcon = false;
 let isDraggingCat = false;
 let activeWindow = null;
 let startMenuOpen = false;
+let bootSequenceCompleted = false;
+
+// Boot Sequence
+function startBootSequence() {
+    const bootOverlay = document.getElementById('boot-overlay');
+    const biosScreen = document.getElementById('bios-screen');
+    const bootloaderScreen = document.getElementById('bootloader-screen');
+    const xpBootScreen = document.getElementById('xp-boot-screen');
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const skipButton = document.getElementById('boot-skip');
+    
+    // Check if user wants to skip boot
+    const shouldSkipBoot = localStorage.getItem('skipBootSequence') === 'true';
+    if (shouldSkipBoot) {
+        finishBootSequence();
+        return;
+    }
+    
+    let canSkip = false;
+    let currentStage = 0;
+    
+    // Enable skip after 1 second
+    setTimeout(() => {
+        canSkip = true;
+    }, 1000);
+    
+    // Skip handlers
+    const handleSkip = () => {
+        if (canSkip && !bootSequenceCompleted) {
+            bootSequenceCompleted = true;
+            localStorage.setItem('skipBootSequence', 'true');
+            finishBootSequence();
+        }
+    };
+    
+    skipButton.addEventListener('click', handleSkip);
+    document.addEventListener('keydown', handleSkip, { once: true });
+    
+    // Stage 1: BIOS Screen (2.5 seconds)
+    setTimeout(() => {
+        if (!bootSequenceCompleted) {
+            biosScreen.classList.remove('active');
+            bootloaderScreen.classList.add('active');
+            currentStage = 1;
+        }
+    }, 2500);
+    
+    // Stage 2: Boot Loader Screen (2.5 seconds)
+    setTimeout(() => {
+        if (!bootSequenceCompleted) {
+            bootloaderScreen.classList.remove('active');
+            xpBootScreen.classList.add('active');
+            currentStage = 2;
+        }
+    }, 5000);
+    
+    // Stage 3: XP Boot Screen (4 seconds)
+    setTimeout(() => {
+        if (!bootSequenceCompleted) {
+            xpBootScreen.classList.remove('active');
+            welcomeScreen.classList.add('active');
+            currentStage = 3;
+        }
+    }, 9000);
+    
+    // Stage 4: Welcome Screen (2 seconds)
+    setTimeout(() => {
+        if (!bootSequenceCompleted) {
+            bootSequenceCompleted = true;
+            finishBootSequence();
+        }
+    }, 11000);
+}
+
+function finishBootSequence() {
+    const bootOverlay = document.getElementById('boot-overlay');
+    bootOverlay.style.opacity = '0';
+    setTimeout(() => {
+        bootOverlay.classList.add('hidden');
+        // Show cat greeting after boot
+        setTimeout(() => {
+            showCatMessage("Hi there! I'm your friendly Linux/5 assistant! 😺");
+        }, 500);
+    }, 500);
+}
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Start boot sequence
+    startBootSequence();
+    
     initializeClock();
     initializeWindows();
     initializeDesktopIcons();
@@ -286,10 +374,14 @@ function initializeCat() {
     const cat = document.getElementById('cat-pet');
     const speechBubble = document.getElementById('cat-speech-bubble');
     
-    // Show welcome message after a delay
-    setTimeout(() => {
-        showCatMessage("Hi there! I'm your friendly Linux/5 assistant! 😺");
-    }, 2000);
+    // Show welcome message only if boot sequence was skipped
+    if (bootSequenceCompleted) {
+        // Boot sequence finished, will show greeting from finishBootSequence
+    } else {
+        setTimeout(() => {
+            showCatMessage("Hi there! I'm your friendly Linux/5 assistant! 😺");
+        }, 2000);
+    }
     
     // Random messages every 30-60 seconds
     scheduleNextCatMessage();

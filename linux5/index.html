@@ -7,6 +7,75 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Boot Sequence -->
+    <div id="boot-overlay">
+        <!-- BIOS Screen -->
+        <div id="bios-screen" class="boot-screen active">
+            <div class="bios-content">
+                <pre class="bios-text">
+LINUX/5 BIOS v5.0.0 (C) 2026 Linux/5 Corp.
+
+CPU: Intel Pentium 4 @ 3.0 GHz
+Memory Test: 512MB OK
+
+Detecting Drives...
+Primary Master: Linux/5 HD (80GB)
+Primary Slave: None
+Secondary Master: CD-ROM Drive
+Secondary Slave: None
+
+<span class="bios-prompt">Press DEL to enter SETUP</span>
+                </pre>
+            </div>
+        </div>
+
+        <!-- Boot Loader Screen -->
+        <div id="bootloader-screen" class="boot-screen">
+            <div class="bootloader-content">
+                <div class="bootloader-logo">LINUX/5</div>
+                <div class="bootloader-text">Starting Linux/5...</div>
+                <div class="bootloader-bar">
+                    <div class="bootloader-bar-fill"></div>
+                </div>
+                <div class="bootloader-status">Loading system files...</div>
+            </div>
+        </div>
+
+        <!-- XP-Style Boot Screen -->
+        <div id="xp-boot-screen" class="boot-screen">
+            <div class="xp-boot-content">
+                <div class="xp-logo">
+                    <div class="xp-logo-text">Linux/5</div>
+                    <div class="xp-logo-subtitle">XP Edition</div>
+                </div>
+                <div class="xp-loading-container">
+                    <div class="xp-loading-bar">
+                        <div class="xp-loading-segment"></div>
+                        <div class="xp-loading-segment"></div>
+                        <div class="xp-loading-segment"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="boot-screen">
+            <div class="welcome-content">
+                <div class="welcome-icon">👤</div>
+                <div class="welcome-text">Welcome</div>
+                <div class="welcome-loading">
+                    <div class="welcome-spinner"></div>
+                    <div class="welcome-status">Loading your personal settings...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skip Button -->
+        <div id="boot-skip" class="boot-skip">
+            Press any key or click to skip...
+        </div>
+    </div>
+
     <!-- Desktop Area -->
     <div id="desktop">
         <!-- Desktop Icons -->
