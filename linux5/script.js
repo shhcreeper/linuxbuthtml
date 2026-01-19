@@ -765,7 +765,7 @@ function browserGo() {
     loadURLWithProxy(url);
 }
 
-function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxies = []) {
+async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxies = []) {
     const content = document.getElementById('browser-content');
     const loading = document.getElementById('browser-loading');
     
@@ -773,6 +773,8 @@ function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxies = []
     try {
         new URL(url);
     } catch (e) {
+        loading.classList.add('hidden');
+        updateBrowserStatus('Error');
         content.innerHTML = `
             <div style="padding: 40px; text-align: center;">
                 <h2 style="color: red;">⚠️ Invalid URL</h2>
@@ -788,7 +790,7 @@ function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxies = []
     // Check if we've tried all proxies
     if (proxyIndex >= proxyList.length) {
         loading.classList.add('hidden');
-        updateBrowserStatus('All proxies failed');
+        updateBrowserStatus('Error: All proxies failed');
         content.innerHTML = `
             <div style="padding: 40px; text-align: center;">
                 <h2 style="color: red;">⚠️ Cannot Display Page</h2>
@@ -820,69 +822,78 @@ function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxies = []
     const proxy = proxyList[proxyIndex];
     triedProxies.push(proxy.name);
     
+    // Show loading state
     updateBrowserStatus(`Loading via ${proxy.name}...`);
     loading.classList.remove('hidden');
     
-    // Properly encode URL for proxy
-    const proxyURL = proxy.url + encodeURIComponent(url);
-    
-    // Clear content and show loading message
+    // Clear content and show loading spinner
     content.innerHTML = `
         <div style="text-align: center; padding: 40px;">
+            <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #0066cc; border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
             <p>Loading ${url}...</p>
             <p style="font-size: 12px; color: #666;">Using ${proxy.name} proxy (${proxyIndex + 1}/${proxyList.length})</p>
             <p style="font-size: 10px; color: #999; margin-top: 10px;">Tried: ${triedProxies.join(', ')}</p>
         </div>
     `;
     
-    // Set timeout for fetch
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    // Properly encode URL for proxy
+    const proxyURL = proxy.url + encodeURIComponent(url);
     
-    fetch(proxyURL, { signal: controller.signal })
-        .then(response => {
-            clearTimeout(timeoutId);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.text();
-        })
-        .then(html => {
-            loading.classList.add('hidden');
-            updateBrowserStatus(`Done (via ${proxy.name})`);
-            
-            // Process HTML to fix relative URLs
-            html = processProxiedHTML(html, url);
-            
-            // Create iframe to display content
-            const iframe = document.createElement('iframe');
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = 'none';
-            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
-            
-            content.innerHTML = '';
-            content.appendChild(iframe);
-            
-            // Write HTML to iframe
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(html);
-            iframeDoc.close();
-            
-            // Add to history
-            browserHistory.push({ type: 'url', url: currentBrowserURL });
-            browserHistoryIndex = browserHistory.length - 1;
-            
-            // Save successful proxy
-            currentProxyIndex = proxyIndex;
-            localStorage.setItem('preferredProxy', proxyIndex.toString());
-        })
-        .catch(error => {
-            clearTimeout(timeoutId);
-            console.log(`Proxy ${proxy.name} failed:`, error.message);
-            
-            // Try next proxy
-            loadURLWithProxy(url, proxyIndex + 1, triedProxies);
-        });
+    try {
+        // Set timeout for fetch (10 seconds as per requirements)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(proxyURL, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const html = await response.text();
+        
+        // Hide loading
+        loading.classList.add('hidden');
+        
+        // Process HTML to fix relative URLs
+        const processedHTML = processProxiedHTML(html, url);
+        
+        // Clear content first
+        content.innerHTML = '';
+        
+        // Create iframe and inject HTML using srcdoc (not src)
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+        
+        // Use srcdoc to inject HTML (avoids X-Frame-Options issues)
+        iframe.srcdoc = processedHTML;
+        
+        content.appendChild(iframe);
+        
+        // Update status to Done only after successful load
+        updateBrowserStatus('Done');
+        
+        // Add to history
+        browserHistory.push({ type: 'url', url: currentBrowserURL });
+        browserHistoryIndex = browserHistory.length - 1;
+        
+        // Save successful proxy
+        currentProxyIndex = proxyIndex;
+        localStorage.setItem('preferredProxy', proxyIndex.toString());
+        
+    } catch (error) {
+        console.log(`Proxy ${proxy.name} failed:`, error.message);
+        
+        // Don't show error, just try next proxy
+        loading.classList.remove('hidden');
+        
+        // Try next proxy
+        await loadURLWithProxy(url, proxyIndex + 1, triedProxies);
+    }
 }
 
 function processProxiedHTML(html, originalURL) {
