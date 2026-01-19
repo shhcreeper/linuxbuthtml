@@ -8,9 +8,110 @@ let isDraggingIcon = false;
 let isDraggingCat = false;
 let activeWindow = null;
 let startMenuOpen = false;
+let bootSequenceCompleted = false;
+
+// Boot sequence timing constants
+const SKIP_ENABLE_DELAY_MS = 1000;
+const BIOS_DURATION_MS = 2500;
+const BOOTLOADER_DURATION_MS = 2500;
+const XP_BOOT_DURATION_MS = 4000;
+const WELCOME_DURATION_MS = 2000;
+
+// Boot Sequence
+function startBootSequence() {
+    const bootOverlay = document.getElementById('boot-overlay');
+    const biosScreen = document.getElementById('bios-screen');
+    const bootloaderScreen = document.getElementById('bootloader-screen');
+    const xpBootScreen = document.getElementById('xp-boot-screen');
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const skipButton = document.getElementById('boot-skip');
+    
+    // Check if user wants to skip boot
+    const shouldSkipBoot = localStorage.getItem('skipBootSequence') === 'true';
+    if (shouldSkipBoot) {
+        finishBootSequence();
+        return;
+    }
+    
+    let canSkip = false;
+    let currentStage = 0;
+    
+    // Enable skip after delay
+    setTimeout(() => {
+        canSkip = true;
+    }, SKIP_ENABLE_DELAY_MS);
+    
+    // Skip handlers
+    const handleSkip = (e) => {
+        // For keyboard events, only accept Enter or Space
+        if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') {
+            return;
+        }
+        
+        if (canSkip && !bootSequenceCompleted) {
+            bootSequenceCompleted = true;
+            localStorage.setItem('skipBootSequence', 'true');
+            finishBootSequence();
+        }
+    };
+    
+    skipButton.addEventListener('click', handleSkip);
+    skipButton.addEventListener('keydown', handleSkip);
+    document.addEventListener('keydown', handleSkip, { once: true });
+    
+    // Stage 1: BIOS Screen
+    setTimeout(() => {
+        if (!bootSequenceCompleted) {
+            biosScreen.classList.remove('active');
+            bootloaderScreen.classList.add('active');
+            currentStage = 1;
+        }
+    }, BIOS_DURATION_MS);
+    
+    // Stage 2: Boot Loader Screen
+    setTimeout(() => {
+        if (!bootSequenceCompleted) {
+            bootloaderScreen.classList.remove('active');
+            xpBootScreen.classList.add('active');
+            currentStage = 2;
+        }
+    }, BIOS_DURATION_MS + BOOTLOADER_DURATION_MS);
+    
+    // Stage 3: XP Boot Screen
+    setTimeout(() => {
+        if (!bootSequenceCompleted) {
+            xpBootScreen.classList.remove('active');
+            welcomeScreen.classList.add('active');
+            currentStage = 3;
+        }
+    }, BIOS_DURATION_MS + BOOTLOADER_DURATION_MS + XP_BOOT_DURATION_MS);
+    
+    // Stage 4: Welcome Screen
+    setTimeout(() => {
+        if (!bootSequenceCompleted) {
+            bootSequenceCompleted = true;
+            finishBootSequence();
+        }
+    }, BIOS_DURATION_MS + BOOTLOADER_DURATION_MS + XP_BOOT_DURATION_MS + WELCOME_DURATION_MS);
+}
+
+function finishBootSequence() {
+    const bootOverlay = document.getElementById('boot-overlay');
+    bootOverlay.style.opacity = '0';
+    setTimeout(() => {
+        bootOverlay.classList.add('hidden');
+        // Show cat greeting after boot
+        setTimeout(() => {
+            showCatMessage("Hi there! I'm your friendly Linux/5 assistant! 😺");
+        }, 500);
+    }, 500);
+}
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Start boot sequence
+    startBootSequence();
+    
     initializeClock();
     initializeWindows();
     initializeDesktopIcons();
@@ -58,18 +159,21 @@ function initializeWindows() {
         
         // Minimize button
         const minimizeBtn = window.querySelector('.minimize');
-        minimizeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            minimizeWindow(window);
-        });
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                minimizeWindow(window);
+            });
+        }
         
         // Maximize button
         const maximizeBtn = window.querySelector('.maximize');
-        maximizeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            maximizeWindow(window);
-        });
-        
+        if (maximizeBtn) {
+            maximizeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                maximizeWindow(window);
+            });
+        }
         // Dragging
         const titlebar = window.querySelector('.window-titlebar');
         titlebar.addEventListener('mousedown', (e) => {
@@ -283,11 +387,7 @@ function initializeCat() {
     const cat = document.getElementById('cat-pet');
     const speechBubble = document.getElementById('cat-speech-bubble');
     
-    // Show welcome message after a delay
-    setTimeout(() => {
-        showCatMessage("Hi there! I'm your friendly Linux/5 assistant! 😺");
-    }, 2000);
-    
+    // Welcome message will be shown from finishBootSequence if boot was not skipped
     // Random messages every 30-60 seconds
     scheduleNextCatMessage();
     
@@ -575,7 +675,7 @@ function notepadLoad() {
 // Calculator Functions
 let calcDisplay = '0';
 let calcFirstOperand = null;
-let calcOperation = null;
+let calcCurrentOperation = null;
 let calcWaitingForOperand = false;
 
 function initializeCalculator() {
@@ -601,25 +701,25 @@ function calcOperation(op) {
     
     if (calcFirstOperand === null) {
         calcFirstOperand = inputValue;
-    } else if (calcOperation) {
-        const result = performCalc(calcFirstOperand, inputValue, calcOperation);
+    } else if (calcCurrentOperation) {
+        const result = performCalc(calcFirstOperand, inputValue, calcCurrentOperation);
         calcDisplay = String(result);
         calcFirstOperand = result;
     }
     
     calcWaitingForOperand = true;
-    calcOperation = op;
+    calcCurrentOperation = op;
     updateCalcDisplay();
 }
 
 function calcEquals() {
     const inputValue = parseFloat(calcDisplay);
     
-    if (calcOperation && calcFirstOperand !== null) {
-        const result = performCalc(calcFirstOperand, inputValue, calcOperation);
+    if (calcCurrentOperation && calcFirstOperand !== null) {
+        const result = performCalc(calcFirstOperand, inputValue, calcCurrentOperation);
         calcDisplay = String(result);
         calcFirstOperand = null;
-        calcOperation = null;
+        calcCurrentOperation = null;
         calcWaitingForOperand = true;
         updateCalcDisplay();
     }
@@ -638,7 +738,7 @@ function performCalc(first, second, op) {
 function calcClear() {
     calcDisplay = '0';
     calcFirstOperand = null;
-    calcOperation = null;
+    calcCurrentOperation = null;
     calcWaitingForOperand = false;
     updateCalcDisplay();
 }
