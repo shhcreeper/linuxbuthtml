@@ -1560,3 +1560,21 @@ body {
 #clock:hover {
     background: rgba(255,255,255,0.1);
 }
+
+/* Accessibility Classes */
+body.high-contrast {
+    filter: contrast(1.5) brightness(1.2);
+}
+
+body.high-contrast .window {
+    border: 3px solid #000;
+}
+
+body.high-contrast .window-titlebar {
+    background: #000 !important;
+}
+
+body.no-animations * {
+    animation: none !important;
+    transition: none !important;
+}

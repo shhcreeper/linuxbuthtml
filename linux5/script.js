@@ -586,6 +586,13 @@ let browserHistory = [];
 let browserHistoryIndex = -1;
 let browserFavorites = [];
 let currentBrowserURL = '';
+let currentProxyIndex = 0;
+let proxyList = [
+    { name: 'AllOrigins', url: 'https://api.allorigins.win/raw?url=' },
+    { name: 'CORS Proxy', url: 'https://corsproxy.io/?' },
+    { name: 'CodeTabs', url: 'https://api.codetabs.com/v1/proxy?quest=' },
+    { name: 'ThingProxy', url: 'https://thingproxy.freeboard.io/fetch/' }
+];
 let browserPages = {
     welcome: `<h1>Welcome to Internet Explorer!</h1>
         <p>Enter a URL in the address bar to browse the web, or try these bookmarks:</p>
@@ -632,6 +639,18 @@ function initializeBrowser() {
             { name: 'Example.com', url: 'https://example.com' }
         ];
         saveFavorites();
+    }
+    
+    // Load custom proxy if set
+    const customProxy = localStorage.getItem('customProxy');
+    if (customProxy) {
+        proxyList.push({ name: 'Custom', url: customProxy });
+    }
+    
+    // Load preferred proxy index
+    const preferredProxy = localStorage.getItem('preferredProxy');
+    if (preferredProxy !== null) {
+        currentProxyIndex = parseInt(preferredProxy);
     }
     
     browserNavigate('welcome');
@@ -746,7 +765,7 @@ function browserGo() {
     loadURLWithProxy(url);
 }
 
-function loadURLWithProxy(url) {
+function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxies = []) {
     const content = document.getElementById('browser-content');
     const loading = document.getElementById('browser-loading');
     
@@ -766,35 +785,79 @@ function loadURLWithProxy(url) {
         return;
     }
     
-    updateBrowserStatus('Loading...');
+    // Check if we've tried all proxies
+    if (proxyIndex >= proxyList.length) {
+        loading.classList.add('hidden');
+        updateBrowserStatus('All proxies failed');
+        content.innerHTML = `
+            <div style="padding: 40px; text-align: center;">
+                <h2 style="color: red;">⚠️ Cannot Display Page</h2>
+                <p>The page at <strong>${url}</strong> could not be loaded with any proxy.</p>
+                <p style="font-size: 12px; color: #666; margin-top: 15px;">
+                    <strong>Tried proxies:</strong><br>
+                    ${triedProxies.join('<br>')}
+                </p>
+                <p style="font-size: 12px; color: #666; margin-top: 15px;">
+                    This could be due to:
+                </p>
+                <ul style="text-align: left; display: inline-block; font-size: 12px; color: #666;">
+                    <li>The website blocking all proxy access (CORS)</li>
+                    <li>The website being unavailable</li>
+                    <li>Network connectivity issues</li>
+                    <li>All proxy services being temporarily unavailable</li>
+                </ul>
+                <p style="margin-top: 20px;">
+                    <button onclick="loadURLWithProxy('${url}', 0, [])" class="browser-btn">Try Again</button>
+                    <button onclick="window.open('${url}', '_blank')" class="browser-btn">Open in New Tab</button>
+                    <button onclick="browserNavigate('welcome')" class="browser-btn">Go to Home Page</button>
+                </p>
+            </div>
+        `;
+        showCatMessage("Oops! All proxies failed. Some sites really don't like proxies! 😿");
+        return;
+    }
+    
+    const proxy = proxyList[proxyIndex];
+    triedProxies.push(proxy.name);
+    
+    updateBrowserStatus(`Loading via ${proxy.name}...`);
     loading.classList.remove('hidden');
     
-    // Use AllOrigins proxy
-    const proxyURL = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    // Properly encode URL for proxy
+    const proxyURL = proxy.url + encodeURIComponent(url);
     
     // Clear content and show loading message
     content.innerHTML = `
         <div style="text-align: center; padding: 40px;">
             <p>Loading ${url}...</p>
-            <p style="font-size: 12px; color: #666;">Using web proxy to fetch content...</p>
+            <p style="font-size: 12px; color: #666;">Using ${proxy.name} proxy (${proxyIndex + 1}/${proxyList.length})</p>
+            <p style="font-size: 10px; color: #999; margin-top: 10px;">Tried: ${triedProxies.join(', ')}</p>
         </div>
     `;
     
-    fetch(proxyURL)
+    // Set timeout for fetch
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+    fetch(proxyURL, { signal: controller.signal })
         .then(response => {
-            if (!response.ok) throw new Error('Failed to load');
+            clearTimeout(timeoutId);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return response.text();
         })
         .then(html => {
             loading.classList.add('hidden');
-            updateBrowserStatus('Done');
+            updateBrowserStatus(`Done (via ${proxy.name})`);
+            
+            // Process HTML to fix relative URLs
+            html = processProxiedHTML(html, url);
             
             // Create iframe to display content
             const iframe = document.createElement('iframe');
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
-            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
             
             content.innerHTML = '';
             content.appendChild(iframe);
@@ -808,30 +871,40 @@ function loadURLWithProxy(url) {
             // Add to history
             browserHistory.push({ type: 'url', url: currentBrowserURL });
             browserHistoryIndex = browserHistory.length - 1;
+            
+            // Save successful proxy
+            currentProxyIndex = proxyIndex;
+            localStorage.setItem('preferredProxy', proxyIndex.toString());
         })
         .catch(error => {
-            loading.classList.add('hidden');
-            updateBrowserStatus('Error');
-            content.innerHTML = `
-                <div style="padding: 40px; text-align: center;">
-                    <h2 style="color: red;">⚠️ Cannot Display Page</h2>
-                    <p>The page at <strong>${url}</strong> could not be loaded.</p>
-                    <p style="font-size: 12px; color: #666;">
-                        This could be due to:
-                        <ul style="text-align: left; display: inline-block; margin-top: 10px;">
-                            <li>The website blocking proxy access (CORS)</li>
-                            <li>The website being unavailable</li>
-                            <li>Network connectivity issues</li>
-                            <li>The proxy service being temporarily unavailable</li>
-                        </ul>
-                    </p>
-                    <p style="margin-top: 20px;">
-                        <button onclick="browserNavigate('welcome')" class="browser-btn">Go to Home Page</button>
-                    </p>
-                </div>
-            `;
-            showCatMessage("Oops! Couldn't load that website. Some sites block proxy access. 😿");
+            clearTimeout(timeoutId);
+            console.log(`Proxy ${proxy.name} failed:`, error.message);
+            
+            // Try next proxy
+            loadURLWithProxy(url, proxyIndex + 1, triedProxies);
         });
+}
+
+function processProxiedHTML(html, originalURL) {
+    try {
+        const urlObj = new URL(originalURL);
+        const baseURL = `${urlObj.protocol}//${urlObj.host}`;
+        
+        // Inject base tag to fix relative URLs
+        if (!html.includes('<base')) {
+            html = html.replace(/<head>/i, `<head><base href="${baseURL}/">`);
+        }
+        
+        // Try to rewrite some common relative URLs (basic approach)
+        // Note: This is a simplified approach and won't catch everything
+        html = html.replace(/href=["']\/([^"']*?)["']/gi, `href="${baseURL}/$1"`);
+        html = html.replace(/src=["']\/([^"']*?)["']/gi, `src="${baseURL}/$1"`);
+        
+    } catch (e) {
+        console.error('Error processing HTML:', e);
+    }
+    
+    return html;
 }
 
 function updateBrowserStatus(text) {
@@ -1794,4 +1867,431 @@ function fmEmptyRecycleBin() {
 // Initialize file system on page load
 document.addEventListener('DOMContentLoaded', () => {
     initializeFileSystem();
+});
+
+// Settings Functions
+
+// Load all settings on page load
+function loadAllSettings() {
+    loadDisplaySettings();
+    loadSoundSettings();
+    loadMouseSettings();
+    loadTaskbarSettings();
+    loadInternetSettings();
+    loadDateTimeSettings();
+    loadAccessibilitySettings();
+    loadCatSettings();
+}
+
+// Display Settings
+function loadDisplaySettings() {
+    const wallpaper = localStorage.getItem('displayWallpaper') || '#5A8CC7';
+    const fontsize = localStorage.getItem('displayFontsize') || 'normal';
+    
+    document.body.style.background = wallpaper;
+    if (wallpaper.startsWith('#')) {
+        document.body.style.backgroundImage = 'none';
+    }
+    
+    if (fontsize === 'large') {
+        document.body.style.fontSize = '14px';
+    } else if (fontsize === 'xlarge') {
+        document.body.style.fontSize = '16px';
+    }
+    
+    // Update UI
+    const wallpaperSelect = document.getElementById('display-wallpaper');
+    const fontsizeSelect = document.getElementById('display-fontsize');
+    if (wallpaperSelect) wallpaperSelect.value = wallpaper;
+    if (fontsizeSelect) fontsizeSelect.value = fontsize;
+}
+
+function applyDisplaySettings() {
+    const wallpaper = document.getElementById('display-wallpaper').value;
+    const fontsize = document.getElementById('display-fontsize').value;
+    
+    localStorage.setItem('displayWallpaper', wallpaper);
+    localStorage.setItem('displayFontsize', fontsize);
+    
+    document.body.style.background = wallpaper;
+    if (wallpaper.startsWith('#')) {
+        document.body.style.backgroundImage = 'none';
+    }
+    
+    document.body.style.fontSize = fontsize === 'large' ? '14px' : fontsize === 'xlarge' ? '16px' : '12px';
+    
+    showCatMessage('Display settings applied! 🖥️');
+}
+
+// Sound Settings
+function loadSoundSettings() {
+    const volume = localStorage.getItem('soundVolume') || '50';
+    const enabled = localStorage.getItem('soundEnabled') !== 'false';
+    
+    const volumeSlider = document.getElementById('sound-volume');
+    const volumeValue = document.getElementById('sound-volume-value');
+    const enabledCheckbox = document.getElementById('sound-enabled');
+    
+    if (volumeSlider) volumeSlider.value = volume;
+    if (volumeValue) volumeValue.textContent = volume;
+    if (enabledCheckbox) enabledCheckbox.checked = enabled;
+}
+
+function applySoundSettings() {
+    const volume = document.getElementById('sound-volume').value;
+    const enabled = document.getElementById('sound-enabled').checked;
+    
+    localStorage.setItem('soundVolume', volume);
+    localStorage.setItem('soundEnabled', enabled.toString());
+    
+    document.getElementById('sound-volume-value').textContent = volume;
+    document.getElementById('volume-slider').value = volume;
+    document.getElementById('volume-value').textContent = volume;
+    
+    showCatMessage('Sound settings applied! 🔊');
+}
+
+function testSound() {
+    showCatMessage('Meow! 🔊 (Sound test - actual audio not implemented)');
+}
+
+// Mouse Settings
+function loadMouseSettings() {
+    const speed = localStorage.getItem('mouseSpeed') || '1';
+    const trails = localStorage.getItem('mouseTrails') === 'true';
+    
+    const speedSlider = document.getElementById('mouse-speed');
+    const trailsCheckbox = document.getElementById('mouse-trails');
+    
+    if (speedSlider) speedSlider.value = speed;
+    if (trailsCheckbox) trailsCheckbox.checked = trails;
+    
+    // Apply cursor speed (CSS cursor transition)
+    document.body.style.cursor = trails ? 'crosshair' : 'default';
+}
+
+function applyMouseSettings() {
+    const speed = document.getElementById('mouse-speed').value;
+    const trails = document.getElementById('mouse-trails').checked;
+    
+    localStorage.setItem('mouseSpeed', speed);
+    localStorage.setItem('mouseTrails', trails.toString());
+    
+    const speedText = speed < 0.8 ? 'Slow' : speed > 1.2 ? 'Fast' : 'Normal';
+    document.getElementById('mouse-speed-value').textContent = speedText;
+    
+    document.body.style.cursor = trails ? 'crosshair' : 'default';
+    
+    showCatMessage('Mouse settings applied! 🖱️');
+}
+
+// Taskbar Settings
+function loadTaskbarSettings() {
+    const autohide = localStorage.getItem('taskbarAutohide') === 'true';
+    const lock = localStorage.getItem('taskbarLock') !== 'false';
+    const clock = localStorage.getItem('taskbarClock') !== 'false';
+    
+    const autohideCheckbox = document.getElementById('taskbar-autohide');
+    const lockCheckbox = document.getElementById('taskbar-lock');
+    const clockCheckbox = document.getElementById('taskbar-clock');
+    
+    if (autohideCheckbox) autohideCheckbox.checked = autohide;
+    if (lockCheckbox) lockCheckbox.checked = lock;
+    if (clockCheckbox) clockCheckbox.checked = clock;
+    
+    // Apply settings
+    const taskbar = document.getElementById('taskbar');
+    const clockEl = document.getElementById('clock');
+    
+    if (autohide) {
+        taskbar.style.bottom = '-35px';
+        taskbar.style.transition = 'bottom 0.3s';
+        taskbar.addEventListener('mouseenter', () => taskbar.style.bottom = '0');
+        taskbar.addEventListener('mouseleave', () => taskbar.style.bottom = '-35px');
+    } else {
+        taskbar.style.bottom = '0';
+    }
+    
+    if (clockEl) clockEl.style.display = clock ? 'block' : 'none';
+}
+
+function applyTaskbarSettings() {
+    const autohide = document.getElementById('taskbar-autohide').checked;
+    const lock = document.getElementById('taskbar-lock').checked;
+    const clock = document.getElementById('taskbar-clock').checked;
+    
+    localStorage.setItem('taskbarAutohide', autohide.toString());
+    localStorage.setItem('taskbarLock', lock.toString());
+    localStorage.setItem('taskbarClock', clock.toString());
+    
+    loadTaskbarSettings();
+    
+    showCatMessage('Taskbar settings applied! 📊');
+}
+
+// Internet Settings
+function loadInternetSettings() {
+    const homepage = localStorage.getItem('internetHomepage') || 'http://welcome.linux5.local';
+    const proxy = localStorage.getItem('preferredProxy') || '0';
+    
+    const homepageInput = document.getElementById('internet-homepage');
+    const proxySelect = document.getElementById('internet-proxy');
+    
+    if (homepageInput) homepageInput.value = homepage;
+    if (proxySelect) proxySelect.value = proxy;
+}
+
+function applyInternetSettings() {
+    const homepage = document.getElementById('internet-homepage').value;
+    const proxy = document.getElementById('internet-proxy').value;
+    
+    localStorage.setItem('internetHomepage', homepage);
+    localStorage.setItem('preferredProxy', proxy);
+    
+    currentProxyIndex = parseInt(proxy);
+    
+    showCatMessage('Internet settings applied! 🌐');
+}
+
+function addCustomProxy() {
+    const customProxy = document.getElementById('internet-custom-proxy').value.trim();
+    if (customProxy) {
+        localStorage.setItem('customProxy', customProxy);
+        proxyList.push({ name: 'Custom', url: customProxy });
+        showCatMessage('Custom proxy added! 🌐');
+    }
+}
+
+function testCurrentProxy() {
+    const proxy = proxyList[currentProxyIndex];
+    showCatMessage(`Testing ${proxy.name} proxy... (This will load a test URL)`);
+    browserLoadURL('https://example.com');
+    openWindow('browser-window');
+}
+
+function clearBrowserHistory() {
+    browserHistory = [];
+    browserHistoryIndex = -1;
+    showCatMessage('Browsing history cleared! 🧹');
+}
+
+function clearAllData() {
+    if (confirm('This will clear all browsing data including history, favorites, and cache. Continue?')) {
+        browserHistory = [];
+        browserHistoryIndex = -1;
+        browserFavorites = [];
+        localStorage.removeItem('browserFavorites');
+        showCatMessage('All browsing data cleared! 🧹');
+    }
+}
+
+function updateProxyPreview() {
+    const proxyIndex = document.getElementById('internet-proxy').value;
+    const proxy = proxyList[parseInt(proxyIndex)];
+    showCatMessage(`Selected proxy: ${proxy.name}`);
+}
+
+// Date & Time Settings
+function loadDateTimeSettings() {
+    const format12 = localStorage.getItem('timeFormat12') !== 'false';
+    const dateFormat = localStorage.getItem('dateFormat') || 'en-US';
+    
+    const format12Radio = document.querySelector('input[name="time-format"][value="12"]');
+    const format24Radio = document.querySelector('input[name="time-format"][value="24"]');
+    const dateFormatSelect = document.getElementById('datetime-format');
+    
+    if (format12Radio) format12Radio.checked = format12;
+    if (format24Radio) format24Radio.checked = !format12;
+    if (dateFormatSelect) dateFormatSelect.value = dateFormat;
+    
+    updateDateTimeCurrent();
+}
+
+function applyDateTimeSettings() {
+    const format12 = document.querySelector('input[name="time-format"]:checked').value === '12';
+    const dateFormat = document.getElementById('datetime-format').value;
+    
+    localStorage.setItem('timeFormat12', format12.toString());
+    localStorage.setItem('dateFormat', dateFormat);
+    
+    updateDateTimeCurrent();
+    updateClock(); // Update the taskbar clock
+    
+    showCatMessage('Date & Time settings applied! 🕐');
+}
+
+function updateDateTimeCurrent() {
+    const currentEl = document.getElementById('datetime-current');
+    if (!currentEl) return;
+    
+    const now = new Date();
+    const format12 = localStorage.getItem('timeFormat12') !== 'false';
+    const dateFormat = localStorage.getItem('dateFormat') || 'en-US';
+    
+    const timeStr = now.toLocaleTimeString('en-US', { hour12: format12 });
+    const dateStr = now.toLocaleDateString(dateFormat);
+    
+    currentEl.textContent = `${dateStr} ${timeStr}`;
+}
+
+// System Settings
+function resetAllSettings() {
+    if (confirm('This will reset all settings to defaults. Continue?')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+function exportSettings() {
+    const settings = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        settings[key] = localStorage.getItem(key);
+    }
+    
+    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'linux5-settings.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showCatMessage('Settings exported! 💾');
+}
+
+function importSettings() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const settings = JSON.parse(event.target.result);
+                for (const key in settings) {
+                    localStorage.setItem(key, settings[key]);
+                }
+                location.reload();
+            } catch (err) {
+                showCatMessage('Error importing settings! 😿');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+// Accessibility Settings
+function loadAccessibilitySettings() {
+    const contrast = localStorage.getItem('accessibilityContrast') === 'true';
+    const largetext = localStorage.getItem('accessibilityLargetext') === 'true';
+    const animations = localStorage.getItem('accessibilityAnimations') !== 'false';
+    
+    const contrastCheckbox = document.getElementById('accessibility-contrast');
+    const largetextCheckbox = document.getElementById('accessibility-largetext');
+    const animationsCheckbox = document.getElementById('accessibility-animations');
+    
+    if (contrastCheckbox) contrastCheckbox.checked = contrast;
+    if (largetextCheckbox) largetextCheckbox.checked = largetext;
+    if (animationsCheckbox) animationsCheckbox.checked = animations;
+    
+    // Apply settings
+    if (contrast) {
+        document.body.classList.add('high-contrast');
+    }
+    if (largetext) {
+        document.body.style.fontSize = '16px';
+    }
+    if (!animations) {
+        document.body.classList.add('no-animations');
+    }
+}
+
+function applyAccessibilitySettings() {
+    const contrast = document.getElementById('accessibility-contrast').checked;
+    const largetext = document.getElementById('accessibility-largetext').checked;
+    const animations = document.getElementById('accessibility-animations').checked;
+    
+    localStorage.setItem('accessibilityContrast', contrast.toString());
+    localStorage.setItem('accessibilityLargetext', largetext.toString());
+    localStorage.setItem('accessibilityAnimations', animations.toString());
+    
+    // Apply immediately
+    document.body.classList.toggle('high-contrast', contrast);
+    document.body.style.fontSize = largetext ? '16px' : '12px';
+    document.body.classList.toggle('no-animations', !animations);
+    
+    showCatMessage('Accessibility settings applied! ♿');
+}
+
+// Cat Settings
+function loadCatSettings() {
+    const enabled = localStorage.getItem('catEnabled') !== 'false';
+    const name = localStorage.getItem('catName') || 'Buddy';
+    const autoSpeak = localStorage.getItem('catAutoSpeak') !== 'false';
+    const frequency = localStorage.getItem('catFrequency') || '60';
+    const mood = localStorage.getItem('catMood') || 'playful';
+    
+    const enabledCheckbox = document.getElementById('cat-enabled');
+    const nameInput = document.getElementById('cat-name');
+    const autoSpeakCheckbox = document.getElementById('cat-auto-speak');
+    const frequencySelect = document.getElementById('cat-frequency');
+    const moodSelect = document.getElementById('cat-mood');
+    
+    if (enabledCheckbox) enabledCheckbox.checked = enabled;
+    if (nameInput) nameInput.value = name;
+    if (autoSpeakCheckbox) autoSpeakCheckbox.checked = autoSpeak;
+    if (frequencySelect) frequencySelect.value = frequency;
+    if (moodSelect) moodSelect.value = mood;
+    
+    const cat = document.getElementById('cat-pet');
+    if (cat) cat.style.display = enabled ? 'block' : 'none';
+}
+
+function applyCatSettings() {
+    const enabled = document.getElementById('cat-enabled').checked;
+    const name = document.getElementById('cat-name').value;
+    const autoSpeak = document.getElementById('cat-auto-speak').checked;
+    const frequency = document.getElementById('cat-frequency').value;
+    const mood = document.getElementById('cat-mood').value;
+    
+    localStorage.setItem('catEnabled', enabled.toString());
+    localStorage.setItem('catName', name);
+    localStorage.setItem('catAutoSpeak', autoSpeak.toString());
+    localStorage.setItem('catFrequency', frequency);
+    localStorage.setItem('catMood', mood);
+    
+    const cat = document.getElementById('cat-pet');
+    if (cat) cat.style.display = enabled ? 'block' : 'none';
+    
+    showCatMessage(`Settings applied! I'm ${name} the ${mood} cat! 🐱`);
+}
+
+// Control Panel View Toggle
+let controlPanelClassicView = false;
+
+function toggleControlPanelView() {
+    controlPanelClassicView = !controlPanelClassicView;
+    const grid = document.getElementById('control-panel-grid');
+    const button = document.getElementById('cp-view-toggle');
+    
+    if (controlPanelClassicView) {
+        grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        button.textContent = 'Switch to Category View';
+    } else {
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+        button.textContent = 'Switch to Classic View';
+    }
+}
+
+// Initialize all settings on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Add small delay to ensure DOM is ready
+    setTimeout(() => {
+        loadAllSettings();
+        updateDateTimeCurrent();
+        setInterval(updateDateTimeCurrent, 1000);
+    }, 100);
 });
