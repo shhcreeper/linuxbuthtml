@@ -58,18 +58,21 @@ function initializeWindows() {
         
         // Minimize button
         const minimizeBtn = window.querySelector('.minimize');
-        minimizeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            minimizeWindow(window);
-        });
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                minimizeWindow(window);
+            });
+        }
         
         // Maximize button
         const maximizeBtn = window.querySelector('.maximize');
-        maximizeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            maximizeWindow(window);
-        });
-        
+        if (maximizeBtn) {
+            maximizeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                maximizeWindow(window);
+            });
+        }
         // Dragging
         const titlebar = window.querySelector('.window-titlebar');
         titlebar.addEventListener('mousedown', (e) => {
@@ -575,7 +578,7 @@ function notepadLoad() {
 // Calculator Functions
 let calcDisplay = '0';
 let calcFirstOperand = null;
-let calcOperation = null;
+let calcCurrentOperation = null;
 let calcWaitingForOperand = false;
 
 function initializeCalculator() {
@@ -601,25 +604,25 @@ function calcOperation(op) {
     
     if (calcFirstOperand === null) {
         calcFirstOperand = inputValue;
-    } else if (calcOperation) {
-        const result = performCalc(calcFirstOperand, inputValue, calcOperation);
+    } else if (calcCurrentOperation) {
+        const result = performCalc(calcFirstOperand, inputValue, calcCurrentOperation);
         calcDisplay = String(result);
         calcFirstOperand = result;
     }
     
     calcWaitingForOperand = true;
-    calcOperation = op;
+    calcCurrentOperation = op;
     updateCalcDisplay();
 }
 
 function calcEquals() {
     const inputValue = parseFloat(calcDisplay);
     
-    if (calcOperation && calcFirstOperand !== null) {
-        const result = performCalc(calcFirstOperand, inputValue, calcOperation);
+    if (calcCurrentOperation && calcFirstOperand !== null) {
+        const result = performCalc(calcFirstOperand, inputValue, calcCurrentOperation);
         calcDisplay = String(result);
         calcFirstOperand = null;
-        calcOperation = null;
+        calcCurrentOperation = null;
         calcWaitingForOperand = true;
         updateCalcDisplay();
     }
@@ -638,7 +641,7 @@ function performCalc(first, second, op) {
 function calcClear() {
     calcDisplay = '0';
     calcFirstOperand = null;
-    calcOperation = null;
+    calcCurrentOperation = null;
     calcWaitingForOperand = false;
     updateCalcDisplay();
 }
