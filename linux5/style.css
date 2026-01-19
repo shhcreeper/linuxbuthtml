@@ -245,7 +245,8 @@ body {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .welcome-status {
@@ -1577,4 +1578,307 @@ body.high-contrast .window-titlebar {
 body.no-animations * {
     animation: none !important;
     transition: none !important;
+}
+
+/* Solitaire Styles */
+.solitaire-content {
+    padding: 10px !important;
+}
+
+.solitaire-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 3px;
+}
+
+.solitaire-header button {
+    padding: 5px 15px;
+    background: white;
+    border: 1px solid #999;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#solitaire-board {
+    min-height: 500px;
+    background: #0a7029;
+    padding: 20px;
+    border-radius: 5px;
+    position: relative;
+}
+
+.solitaire-pile {
+    position: absolute;
+    width: 80px;
+    min-height: 110px;
+    border: 2px dashed rgba(255,255,255,0.3);
+    border-radius: 5px;
+}
+
+.solitaire-card {
+    width: 80px;
+    height: 110px;
+    background: white;
+    border: 2px solid #000;
+    border-radius: 5px;
+    position: absolute;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    user-select: none;
+}
+
+.solitaire-card.red {
+    color: #d00;
+}
+
+.solitaire-card.black {
+    color: #000;
+}
+
+.solitaire-card.facedown {
+    background: linear-gradient(135deg, #0066cc 25%, #0044aa 25%, #0044aa 50%, #0066cc 50%, #0066cc 75%, #0044aa 75%);
+    background-size: 20px 20px;
+}
+
+.solitaire-card-value {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.solitaire-card-suit {
+    font-size: 20px;
+    text-align: center;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Snake Styles */
+.snake-content {
+    display: flex;
+    flex-direction: column;
+    padding: 10px !important;
+}
+
+.snake-header {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 3px;
+}
+
+.snake-header button {
+    padding: 5px 15px;
+    background: white;
+    border: 1px solid #999;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#snake-canvas {
+    background: #000;
+    border: 3px solid #666;
+    display: block;
+    margin: 0 auto;
+}
+
+.snake-info {
+    text-align: center;
+    margin-top: 10px;
+    color: #666;
+    font-size: 12px;
+}
+
+/* Tetris Styles */
+.tetris-content {
+    padding: 10px !important;
+}
+
+.tetris-main {
+    display: flex;
+    gap: 20px;
+}
+
+#tetris-canvas {
+    background: #000;
+    border: 3px solid #666;
+}
+
+.tetris-side {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    min-width: 150px;
+}
+
+.tetris-header {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tetris-header button {
+    padding: 8px;
+    background: white;
+    border: 1px solid #999;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.tetris-stats {
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 3px;
+}
+
+.tetris-stats > div {
+    margin: 5px 0;
+}
+
+.tetris-next {
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 3px;
+}
+
+#tetris-next-canvas {
+    background: #000;
+    border: 2px solid #666;
+    display: block;
+    margin: 10px auto;
+}
+
+.tetris-controls {
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+.tetris-controls > div {
+    margin: 3px 0;
+}
+
+/* Pinball Styles */
+.pinball-content {
+    display: flex;
+    flex-direction: column;
+    padding: 10px !important;
+}
+
+.pinball-header {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 3px;
+}
+
+.pinball-header button {
+    padding: 5px 15px;
+    background: white;
+    border: 1px solid #999;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#pinball-canvas {
+    background: #1a1a4d;
+    border: 3px solid #666;
+    display: block;
+    margin: 0 auto;
+}
+
+.pinball-info {
+    text-align: center;
+    margin-top: 10px;
+    color: #666;
+    font-size: 12px;
+}
+
+/* Tic-Tac-Toe Styles */
+.tictactoe-content {
+    padding: 15px !important;
+}
+
+.tictactoe-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.tictactoe-header button {
+    padding: 5px 15px;
+    background: white;
+    border: 1px solid #999;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#tictactoe-board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    gap: 5px;
+    margin: 0 auto 15px;
+    width: fit-content;
+}
+
+.tictactoe-cell {
+    width: 100px;
+    height: 100px;
+    background: white;
+    border: 3px solid #999;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.tictactoe-cell:hover {
+    background: #f0f0f0;
+}
+
+.tictactoe-cell.x {
+    color: #0066cc;
+}
+
+.tictactoe-cell.o {
+    color: #d00;
+}
+
+.tictactoe-cell.winner {
+    background: #ffd700;
+}
+
+.tictactoe-status {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.tictactoe-scores {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 3px;
 }
