@@ -231,12 +231,34 @@ function openWindow(windowId) {
     
     window.classList.add('active');
     
-    // Center window if not positioned
+    // Center window if not positioned with specific sizes for each window type
     if (!window.style.left) {
-        window.style.left = (window.innerWidth / 2 - 300) + 'px';
-        window.style.top = (window.innerHeight / 2 - 200) + 'px';
-        window.style.width = '500px';
-        window.style.height = '400px';
+        // Define window sizes based on type
+        const windowSizes = {
+            'browser-window': { width: 1024, height: 768 },
+            'minesweeper-window': { width: 600, height: 500 },
+            'solitaire-window': { width: 900, height: 700 },
+            'tetris-window': { width: 400, height: 600 },
+            'snake-window': { width: 500, height: 550 },
+            'notepad-window': { width: 600, height: 500 },
+            'calculator-window': { width: 300, height: 400 },
+            'paint-window': { width: 900, height: 700 },
+            'filemanager-window': { width: 800, height: 600 },
+            'settings-window': { width: 500, height: 550 },
+            'games-window': { width: 900, height: 700 },
+            'pinball-window': { width: 500, height: 700 },
+            'tictactoe-window': { width: 400, height: 550 },
+            'help-window': { width: 600, height: 500 },
+            'about-window': { width: 500, height: 400 }
+        };
+        
+        // Get size for this window type, default to 800x600
+        const size = windowSizes[windowId] || { width: 800, height: 600 };
+        
+        window.style.left = Math.max(50, (window.innerWidth / 2 - size.width / 2)) + 'px';
+        window.style.top = Math.max(50, (window.innerHeight / 2 - size.height / 2)) + 'px';
+        window.style.width = size.width + 'px';
+        window.style.height = size.height + 'px';
     }
     
     bringToFront(window);
@@ -909,12 +931,25 @@ function processProxiedHTML(html, originalURL) {
         // Inject base tag to fix relative URLs
         if (!html.includes('<base')) {
             html = html.replace(/<head>/i, `<head><base href="${baseURL}/">`);
+        } else {
+            // Update existing base tag
+            html = html.replace(/<base\s+href=["'][^"']*["']/gi, `<base href="${baseURL}/"`);
         }
         
-        // Try to rewrite some common relative URLs (basic approach)
-        // Note: This is a simplified approach and won't catch everything
-        html = html.replace(/href=["']\/([^"']*?)["']/gi, `href="${baseURL}/$1"`);
-        html = html.replace(/src=["']\/([^"']*?)["']/gi, `src="${baseURL}/$1"`);
+        // Fix relative URLs in href and src attributes (only those starting with / but not //)
+        html = html.replace(/href=["']\/(?!\/)([^"']*?)["']/gi, `href="${baseURL}/$1"`);
+        html = html.replace(/src=["']\/(?!\/)([^"']*?)["']/gi, `src="${baseURL}/$1"`);
+        
+        // Add viewport meta if missing
+        if (!html.includes('viewport')) {
+            html = html.replace(/<head>/i, '<head><meta name="viewport" content="width=device-width, initial-scale=1">');
+        }
+        
+        // Add CSP meta to allow loading resources
+        const cspMeta = '<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">';
+        if (!html.includes('Content-Security-Policy')) {
+            html = html.replace(/<head>/i, '<head>' + cspMeta);
+        }
         
     } catch (e) {
         console.error('Error processing HTML:', e);
@@ -1525,21 +1560,76 @@ function initializeFileSystem() {
             desktop: {
                 type: 'folder',
                 name: 'Desktop',
-                children: {}
+                children: {
+                    'readme.txt': { 
+                        type: 'file', 
+                        name: 'readme.txt', 
+                        size: '1 KB',
+                        content: 'Welcome to Linux/5!\n\nThis is a nostalgic recreation of Windows XP-style desktop.\n\nDouble-click icons to open programs!\nRight-click for context menus!\nDrag windows and icons around!\n\nHave fun exploring! 😺',
+                        modified: new Date().toLocaleDateString()
+                    }
+                }
             },
             mydocuments: {
                 type: 'folder',
                 name: 'My Documents',
                 children: {
-                    'My Pictures': { type: 'folder', name: 'My Pictures', children: {} },
-                    'My Music': { type: 'folder', name: 'My Music', children: {} },
+                    'My Pictures': { 
+                        type: 'folder', 
+                        name: 'My Pictures', 
+                        children: {
+                            'Sample Pictures': {
+                                type: 'folder',
+                                name: 'Sample Pictures',
+                                children: {
+                                    'sunset.jpg': { type: 'file', name: 'sunset.jpg', size: '128 KB', modified: new Date().toLocaleDateString() },
+                                    'beach.jpg': { type: 'file', name: 'beach.jpg', size: '156 KB', modified: new Date().toLocaleDateString() }
+                                }
+                            }
+                        }
+                    },
+                    'My Music': { 
+                        type: 'folder', 
+                        name: 'My Music',
+                        children: {
+                            'Sample Music': { type: 'folder', name: 'Sample Music', children: {} }
+                        }
+                    },
                     'My Videos': { type: 'folder', name: 'My Videos', children: {} },
+                    'Downloads': { type: 'folder', name: 'Downloads', children: {} },
                     'Work': { 
                         type: 'folder', 
                         name: 'Work', 
                         children: {
-                            'Reports': { type: 'folder', name: 'Reports', children: {} },
+                            'Reports': { 
+                                type: 'folder', 
+                                name: 'Reports', 
+                                children: {
+                                    '2024': { type: 'folder', name: '2024', children: {} },
+                                    '2025': { type: 'folder', name: '2025', children: {} }
+                                }
+                            },
+                            'Projects': { type: 'folder', name: 'Projects', children: {} },
                             'Presentations': { type: 'folder', name: 'Presentations', children: {} }
+                        }
+                    },
+                    'Personal': {
+                        type: 'folder',
+                        name: 'Personal',
+                        children: {
+                            'Notes': {
+                                type: 'folder',
+                                name: 'Notes',
+                                children: {
+                                    'todo.txt': {
+                                        type: 'file',
+                                        name: 'todo.txt',
+                                        size: '1 KB',
+                                        content: '- Learn Linux/5\n- Explore all the features\n- Have fun!\n- Customize desktop\n- Try all the games',
+                                        modified: new Date().toLocaleDateString()
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1557,13 +1647,38 @@ function initializeFileSystem() {
                         type: 'drive', 
                         name: 'Local Disk (C:)', 
                         children: {
-                            'Program Files': { type: 'folder', name: 'Program Files', children: {} },
-                            'Windows': { type: 'folder', name: 'Windows', children: {} },
+                            'Program Files': { 
+                                type: 'folder', 
+                                name: 'Program Files', 
+                                children: {
+                                    'Internet Explorer': { type: 'folder', name: 'Internet Explorer', children: {} },
+                                    'Windows Media Player': { type: 'folder', name: 'Windows Media Player', children: {} },
+                                    'Games': { type: 'folder', name: 'Games', children: {} },
+                                    'Accessories': { type: 'folder', name: 'Accessories', children: {} }
+                                }
+                            },
+                            'Windows': { 
+                                type: 'folder', 
+                                name: 'Windows', 
+                                children: {
+                                    'System32': { type: 'folder', name: 'System32', children: {} },
+                                    'Fonts': { type: 'folder', name: 'Fonts', children: {} },
+                                    'Temp': { type: 'folder', name: 'Temp', children: {} }
+                                }
+                            },
                             'Users': { 
                                 type: 'folder', 
                                 name: 'Users', 
                                 children: {
-                                    'Guest': { type: 'folder', name: 'Guest', children: {} }
+                                    'User': { 
+                                        type: 'folder', 
+                                        name: 'User', 
+                                        children: {
+                                            'Desktop': { type: 'folder', name: 'Desktop', children: {} },
+                                            'Documents': { type: 'folder', name: 'Documents', children: {} },
+                                            'Downloads': { type: 'folder', name: 'Downloads', children: {} }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -3414,4 +3529,124 @@ function tictactoeToggleMode() {
     tictactoeState.vsAI = !tictactoeState.vsAI;
     document.getElementById('tictactoe-mode').textContent = tictactoeState.vsAI ? 'vs AI' : '2 Player';
     tictactoeNew();
+}
+
+// ===== NEW SETTINGS FUNCTIONS =====
+
+// Network Settings
+function applyNetworkSettings() {
+    const useProxy = document.getElementById('network-use-proxy').checked;
+    const proxyAddress = document.getElementById('network-proxy-address').value;
+    const proxyPort = document.getElementById('network-proxy-port').value;
+    
+    localStorage.setItem('networkUseProxy', useProxy.toString());
+    localStorage.setItem('networkProxyAddress', proxyAddress);
+    localStorage.setItem('networkProxyPort', proxyPort);
+    
+    showCatMessage('Network settings applied! 📡');
+}
+
+function testNetworkConnection() {
+    const status = document.getElementById('network-status');
+    status.innerHTML = 'Status: <span style="color: orange;">Testing...</span>';
+    
+    setTimeout(() => {
+        status.innerHTML = 'Status: <span style="color: green;">Connected</span>';
+        showCatMessage('Connection test successful! 🌐');
+    }, 1500);
+}
+
+// User Accounts Settings
+function changeUsername() {
+    const newName = prompt('Enter new username:', 'Guest User');
+    if (newName) {
+        document.getElementById('user-current-name').textContent = newName;
+        document.querySelector('.user-name').textContent = newName;
+        localStorage.setItem('username', newName);
+        showCatMessage(`Username changed to "${newName}"! 👤`);
+    }
+}
+
+function changeUserAvatar() {
+    const avatar = document.getElementById('user-avatar').value;
+    document.querySelector('.user-icon').textContent = avatar;
+    showCatMessage('Avatar changed! 😊');
+}
+
+function applyUserAccountSettings() {
+    const guestEnabled = document.getElementById('user-guest-enabled').checked;
+    const avatar = document.getElementById('user-avatar').value;
+    
+    localStorage.setItem('userGuestEnabled', guestEnabled.toString());
+    localStorage.setItem('userAvatar', avatar);
+    
+    document.querySelector('.user-icon').textContent = avatar;
+    
+    showCatMessage('User account settings applied! 👤');
+}
+
+// Power Settings
+function applyPowerSettings() {
+    const screenTimeout = document.getElementById('power-screen-timeout').value;
+    const sleepTimeout = document.getElementById('power-sleep-timeout').value;
+    const powerPlan = document.querySelector('input[name="power-plan"]:checked').value;
+    
+    localStorage.setItem('powerScreenTimeout', screenTimeout);
+    localStorage.setItem('powerSleepTimeout', sleepTimeout);
+    localStorage.setItem('powerPlan', powerPlan);
+    
+    showCatMessage('Power settings applied! 🔋');
+}
+
+// Folder Settings
+function applyFolderSettings() {
+    const showHidden = document.getElementById('folder-show-hidden').checked;
+    const showExtensions = document.getElementById('folder-show-extensions').checked;
+    const showSystem = document.getElementById('folder-show-system').checked;
+    const clickMode = document.querySelector('input[name="folder-click"]:checked').value;
+    const defaultView = document.getElementById('folder-default-view').value;
+    
+    localStorage.setItem('folderShowHidden', showHidden.toString());
+    localStorage.setItem('folderShowExtensions', showExtensions.toString());
+    localStorage.setItem('folderShowSystem', showSystem.toString());
+    localStorage.setItem('folderClickMode', clickMode);
+    localStorage.setItem('folderDefaultView', defaultView);
+    
+    // Apply default view
+    fmViewMode = defaultView;
+    if (document.getElementById('filemanager-window').classList.contains('active')) {
+        renderFileManager();
+    }
+    
+    showCatMessage('Folder options applied! 📂');
+}
+
+// Keyboard Settings
+function applyKeyboardSettings() {
+    const shortcutsEnabled = document.getElementById('keyboard-shortcuts-enabled').checked;
+    const repeatDelay = document.getElementById('keyboard-repeat-delay').value;
+    const repeatRate = document.getElementById('keyboard-repeat-rate').value;
+    
+    localStorage.setItem('keyboardShortcutsEnabled', shortcutsEnabled.toString());
+    localStorage.setItem('keyboardRepeatDelay', repeatDelay);
+    localStorage.setItem('keyboardRepeatRate', repeatRate);
+    
+    showCatMessage('Keyboard settings applied! ⌨️');
+}
+
+// Regional Settings
+function applyRegionalSettings() {
+    const language = document.getElementById('regional-language').value;
+    const decimal = document.getElementById('regional-decimal').value;
+    const grouping = document.getElementById('regional-grouping').value;
+    const currency = document.getElementById('regional-currency').value;
+    const currencyPosition = document.getElementById('regional-currency-position').value;
+    
+    localStorage.setItem('regionalLanguage', language);
+    localStorage.setItem('regionalDecimal', decimal);
+    localStorage.setItem('regionalGrouping', grouping);
+    localStorage.setItem('regionalCurrency', currency);
+    localStorage.setItem('regionalCurrencyPosition', currencyPosition);
+    
+    showCatMessage('Regional settings applied! 🌍');
 }

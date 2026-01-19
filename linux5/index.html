@@ -595,6 +595,10 @@ Secondary Slave: None
                     <div class="settings-icon">🖱️</div>
                     <div class="settings-name">Mouse</div>
                 </div>
+                <div class="settings-item" onclick="openWindow('keyboard-settings-window')">
+                    <div class="settings-icon">⌨️</div>
+                    <div class="settings-name">Keyboard</div>
+                </div>
                 <div class="settings-item" onclick="openWindow('taskbar-settings-window')">
                     <div class="settings-icon">📊</div>
                     <div class="settings-name">Taskbar</div>
@@ -602,6 +606,30 @@ Secondary Slave: None
                 <div class="settings-item" onclick="openWindow('internet-settings-window')">
                     <div class="settings-icon">🌐</div>
                     <div class="settings-name">Internet Options</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('network-settings-window')">
+                    <div class="settings-icon">📡</div>
+                    <div class="settings-name">Network</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('user-accounts-window')">
+                    <div class="settings-icon">👤</div>
+                    <div class="settings-name">User Accounts</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('power-settings-window')">
+                    <div class="settings-icon">🔋</div>
+                    <div class="settings-name">Power Options</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('programs-settings-window')">
+                    <div class="settings-icon">📦</div>
+                    <div class="settings-name">Programs</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('folder-settings-window')">
+                    <div class="settings-icon">📂</div>
+                    <div class="settings-name">Folder Options</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('regional-settings-window')">
+                    <div class="settings-icon">🌍</div>
+                    <div class="settings-name">Regional</div>
                 </div>
                 <div class="settings-item" onclick="openWindow('cat-settings-window')">
                     <div class="settings-icon">🐱</div>
@@ -966,6 +994,245 @@ Secondary Slave: None
                 <button onclick="applyCatSettings()">Apply</button>
                 <button onclick="applyCatSettings(); closeWindow(document.getElementById('cat-settings-window'))">OK</button>
                 <button onclick="closeWindow(document.getElementById('cat-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Settings -->
+    <div class="window" id="network-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Network Properties</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Network Connection Status</h3>
+            <p id="network-status">Status: <span style="color: green;">Connected</span></p>
+            <p>Connection Type: Local Area Network</p>
+            <h3 style="margin-top: 15px;">Proxy Server</h3>
+            <label><input type="checkbox" id="network-use-proxy" onchange="applyNetworkSettings()"> Use proxy server</label><br/>
+            <div style="margin-top: 10px;">
+                <input type="text" id="network-proxy-address" placeholder="proxy.example.com" style="width: 70%; padding: 5px;" />
+                <input type="text" id="network-proxy-port" placeholder="8080" style="width: 25%; padding: 5px; margin-left: 5px;" />
+            </div>
+            <div style="margin-top: 20px;">
+                <button onclick="testNetworkConnection()">Test Connection</button>
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyNetworkSettings()">Apply</button>
+                <button onclick="applyNetworkSettings(); closeWindow(document.getElementById('network-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('network-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Accounts Settings -->
+    <div class="window" id="user-accounts-window">
+        <div class="window-titlebar">
+            <span class="window-title">User Accounts</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Current User</h3>
+            <p><strong>Username:</strong> <span id="user-current-name">Guest User</span></p>
+            <div style="margin: 15px 0;">
+                <button onclick="changeUsername()">Change Username</button>
+                <button onclick="changeUserAvatar()">Change Avatar</button>
+            </div>
+            <h3 style="margin-top: 15px;">Guest Account</h3>
+            <label><input type="checkbox" id="user-guest-enabled" checked onchange="applyUserAccountSettings()"> Enable guest account</label>
+            <h3 style="margin-top: 15px;">Account Picture</h3>
+            <select id="user-avatar" onchange="applyUserAccountSettings()">
+                <option value="👤">Default</option>
+                <option value="😊">Smiley</option>
+                <option value="🐱">Cat</option>
+                <option value="🐶">Dog</option>
+                <option value="🦁">Lion</option>
+                <option value="🐼">Panda</option>
+            </select>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyUserAccountSettings()">Apply</button>
+                <button onclick="applyUserAccountSettings(); closeWindow(document.getElementById('user-accounts-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('user-accounts-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Power Options Settings -->
+    <div class="window" id="power-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Power Options</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Screen Saver</h3>
+            <label>Turn off screen after: <select id="power-screen-timeout" onchange="applyPowerSettings()">
+                <option value="0">Never</option>
+                <option value="5">5 minutes</option>
+                <option value="10" selected>10 minutes</option>
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+            </select></label>
+            <h3 style="margin-top: 15px;">Sleep Mode</h3>
+            <label>Put computer to sleep after: <select id="power-sleep-timeout" onchange="applyPowerSettings()">
+                <option value="0">Never</option>
+                <option value="15">15 minutes</option>
+                <option value="30" selected>30 minutes</option>
+                <option value="60">1 hour</option>
+                <option value="120">2 hours</option>
+            </select></label>
+            <h3 style="margin-top: 15px;">Power Plan</h3>
+            <label><input type="radio" name="power-plan" value="balanced" checked onchange="applyPowerSettings()"> Balanced</label><br/>
+            <label><input type="radio" name="power-plan" value="performance" onchange="applyPowerSettings()"> High Performance</label><br/>
+            <label><input type="radio" name="power-plan" value="saver" onchange="applyPowerSettings()"> Power Saver</label>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyPowerSettings()">Apply</button>
+                <button onclick="applyPowerSettings(); closeWindow(document.getElementById('power-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('power-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Programs Settings -->
+    <div class="window" id="programs-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Add or Remove Programs</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Currently Installed Programs</h3>
+            <div id="programs-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <strong>Internet Explorer</strong><br/>
+                    <span style="font-size: 11px; color: #666;">Size: 5.2 MB</span>
+                </div>
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <strong>Notepad</strong><br/>
+                    <span style="font-size: 11px; color: #666;">Size: 0.5 MB</span>
+                </div>
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <strong>Calculator</strong><br/>
+                    <span style="font-size: 11px; color: #666;">Size: 0.8 MB</span>
+                </div>
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <strong>Paint</strong><br/>
+                    <span style="font-size: 11px; color: #666;">Size: 1.2 MB</span>
+                </div>
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <strong>Games</strong><br/>
+                    <span style="font-size: 11px; color: #666;">Size: 3.5 MB</span>
+                </div>
+            </div>
+            <p style="font-size: 11px; color: #666;">Total programs: 5 | Total size: 11.2 MB</p>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeWindow(document.getElementById('programs-settings-window'))">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Folder Options Settings -->
+    <div class="window" id="folder-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Folder Options</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>General Options</h3>
+            <label><input type="checkbox" id="folder-show-hidden" onchange="applyFolderSettings()"> Show hidden files and folders</label><br/>
+            <label><input type="checkbox" id="folder-show-extensions" checked onchange="applyFolderSettings()"> Show file extensions</label><br/>
+            <label><input type="checkbox" id="folder-show-system" onchange="applyFolderSettings()"> Show system files</label>
+            <h3 style="margin-top: 15px;">Click Options</h3>
+            <label><input type="radio" name="folder-click" value="double" checked onchange="applyFolderSettings()"> Double-click to open</label><br/>
+            <label><input type="radio" name="folder-click" value="single" onchange="applyFolderSettings()"> Single-click to open</label>
+            <h3 style="margin-top: 15px;">View Options</h3>
+            <label>Default view: <select id="folder-default-view" onchange="applyFolderSettings()">
+                <option value="icons" selected>Icons</option>
+                <option value="list">List</option>
+                <option value="details">Details</option>
+            </select></label>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyFolderSettings()">Apply</button>
+                <button onclick="applyFolderSettings(); closeWindow(document.getElementById('folder-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('folder-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Settings -->
+    <div class="window" id="keyboard-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Keyboard Properties</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Keyboard Shortcuts</h3>
+            <div style="background: #f0f0f0; padding: 10px; border-radius: 3px; margin: 10px 0;">
+                <p><kbd>Alt + F4</kbd> - Close active window</p>
+                <p><kbd>Win</kbd> - Open Start Menu</p>
+                <p><kbd>Arrow Keys</kbd> - Navigate (in games)</p>
+            </div>
+            <h3 style="margin-top: 15px;">Keyboard Settings</h3>
+            <label><input type="checkbox" id="keyboard-shortcuts-enabled" checked onchange="applyKeyboardSettings()"> Enable keyboard shortcuts</label><br/>
+            <label>Repeat delay: <select id="keyboard-repeat-delay" onchange="applyKeyboardSettings()">
+                <option value="short">Short</option>
+                <option value="medium" selected>Medium</option>
+                <option value="long">Long</option>
+            </select></label><br/>
+            <label>Repeat rate: <select id="keyboard-repeat-rate" onchange="applyKeyboardSettings()">
+                <option value="slow">Slow</option>
+                <option value="medium" selected>Medium</option>
+                <option value="fast">Fast</option>
+            </select></label>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyKeyboardSettings()">Apply</button>
+                <button onclick="applyKeyboardSettings(); closeWindow(document.getElementById('keyboard-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('keyboard-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Regional Settings -->
+    <div class="window" id="regional-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Regional and Language Options</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Language</h3>
+            <label>Display language: <select id="regional-language" onchange="applyRegionalSettings()">
+                <option value="en-US" selected>English (United States)</option>
+                <option value="en-GB">English (United Kingdom)</option>
+                <option value="es-ES">Español (España)</option>
+                <option value="fr-FR">Français (France)</option>
+                <option value="de-DE">Deutsch (Deutschland)</option>
+                <option value="ja-JP">日本語 (日本)</option>
+            </select></label>
+            <h3 style="margin-top: 15px;">Number Format</h3>
+            <label>Decimal symbol: <input type="text" id="regional-decimal" value="." maxlength="1" style="width: 30px; padding: 5px;" onchange="applyRegionalSettings()" /></label><br/>
+            <label>Digit grouping symbol: <input type="text" id="regional-grouping" value="," maxlength="1" style="width: 30px; padding: 5px;" onchange="applyRegionalSettings()" /></label>
+            <h3 style="margin-top: 15px;">Currency Format</h3>
+            <label>Currency symbol: <input type="text" id="regional-currency" value="$" maxlength="3" style="width: 40px; padding: 5px;" onchange="applyRegionalSettings()" /></label><br/>
+            <label>Currency position: <select id="regional-currency-position" onchange="applyRegionalSettings()">
+                <option value="before" selected>Before amount ($1.00)</option>
+                <option value="after">After amount (1.00$)</option>
+            </select></label>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyRegionalSettings()">Apply</button>
+                <button onclick="applyRegionalSettings(); closeWindow(document.getElementById('regional-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('regional-settings-window'))">Cancel</button>
             </div>
         </div>
     </div>
