@@ -145,6 +145,7 @@ function closeWindow(window) {
 }
 
 function minimizeWindow(window) {
+    window.classList.add('minimized');
     window.classList.remove('active');
     updateTaskbar();
 }
@@ -229,18 +230,27 @@ function updateTaskbar() {
     const taskbarButtons = document.getElementById('taskbar-buttons');
     taskbarButtons.innerHTML = '';
     
-    const activeWindows = document.querySelectorAll('.window.active');
+    const openWindows = document.querySelectorAll('.window.active, .window.minimized');
     
-    activeWindows.forEach(window => {
+    openWindows.forEach(window => {
         const button = document.createElement('button');
         button.className = 'taskbar-btn';
+        if (window.classList.contains('active') && !window.classList.contains('minimized')) {
+            button.classList.add('active');
+        }
         button.textContent = window.querySelector('.window-title').textContent;
         
         button.addEventListener('click', () => {
-            if (window.style.display === 'none') {
-                window.style.display = 'block';
+            if (window.classList.contains('minimized')) {
+                window.classList.remove('minimized');
+                window.classList.add('active');
+                bringToFront(window);
+            } else if (window === activeWindow) {
+                minimizeWindow(window);
+            } else {
+                window.classList.add('active');
+                bringToFront(window);
             }
-            bringToFront(window);
         });
         
         taskbarButtons.appendChild(button);
@@ -377,16 +387,680 @@ document.addEventListener('DOMContentLoaded', () => {
     
     startMenuItems.forEach(item => {
         item.addEventListener('click', () => {
-            if (item.textContent.includes('Turn Off')) {
-                showCatMessage("Don't leave! We're having so much fun! 😿");
-            } else if (item.textContent.includes('Games')) {
-                showCatMessage("Games are fun! But you're already playing the best one! 🎮");
-            } else if (item.textContent.includes('Help')) {
-                showCatMessage("I'm here to help! Just click on me anytime! 💡");
-            } else {
-                showCatMessage("That feature isn't available yet, but I'll keep you company! 😸");
+            const windowId = item.dataset.window;
+            if (windowId) {
+                openWindow(windowId + '-window');
+                toggleStartMenu();
             }
-            toggleStartMenu();
         });
     });
+    
+    // Context menu handling
+    const catPet = document.getElementById('cat-pet');
+    const catContextMenu = document.getElementById('cat-context-menu');
+    const desktop = document.getElementById('desktop');
+    const desktopContextMenu = document.getElementById('desktop-context-menu');
+    
+    catPet.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        showContextMenu(catContextMenu, e.clientX, e.clientY);
+    });
+    
+    desktop.addEventListener('contextmenu', (e) => {
+        if (e.target === desktop) {
+            e.preventDefault();
+            showContextMenu(desktopContextMenu, e.clientX, e.clientY);
+        }
+    });
+    
+    document.addEventListener('click', () => {
+        catContextMenu.classList.add('hidden');
+        desktopContextMenu.classList.add('hidden');
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Alt+F4 to close active window
+        if (e.altKey && e.key === 'F4') {
+            e.preventDefault();
+            if (activeWindow) {
+                closeWindow(activeWindow);
+            }
+        }
+    });
+    
+    // Initialize applications
+    initializeBrowser();
+    initializeNotepad();
+    initializeCalculator();
+    initializePaint();
+    initializeMinesweeper();
 });
+
+function showContextMenu(menu, x, y) {
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.classList.remove('hidden');
+}
+
+// Browser Functions
+let browserHistory = [];
+let browserHistoryIndex = -1;
+let browserPages = {
+    welcome: `<h1>Welcome to Linux/5 Browser!</h1>
+        <p>This is a simulated web browser. Try these links:</p>
+        <ul>
+            <li><a href="#" onclick="browserNavigate('welcome'); return false;">Home</a></li>
+            <li><a href="#" onclick="browserNavigate('about'); return false;">About Linux/5</a></li>
+            <li><a href="#" onclick="browserNavigate('help'); return false;">Help & Tips</a></li>
+            <li><a href="#" onclick="browserNavigate('games'); return false;">Games Portal</a></li>
+        </ul>`,
+    about: `<h1>About Linux/5</h1>
+        <p>Linux/5 is a nostalgic recreation of a Windows XP-style desktop experience.</p>
+        <p>Built with pure HTML, CSS, and JavaScript!</p>
+        <p><a href="#" onclick="browserNavigate('welcome'); return false;">Back to Home</a></p>`,
+    help: `<h1>Help & Tips</h1>
+        <ul>
+            <li>Double-click icons to open programs</li>
+            <li>Drag windows by their title bar</li>
+            <li>Right-click the cat for options</li>
+            <li>Use Alt+F4 to close windows</li>
+        </ul>
+        <p><a href="#" onclick="browserNavigate('welcome'); return false;">Back to Home</a></p>`,
+    games: `<h1>Games Portal</h1>
+        <p>Check out these games:</p>
+        <ul>
+            <li>Minesweeper - Classic puzzle game</li>
+            <li>Solitaire - Coming soon!</li>
+        </ul>
+        <p><a href="#" onclick="browserNavigate('welcome'); return false;">Back to Home</a></p>`
+};
+
+function initializeBrowser() {
+    browserNavigate('welcome');
+}
+
+function browserNavigate(page) {
+    const content = document.getElementById('browser-content');
+    const urlBar = document.getElementById('browser-url');
+    
+    if (browserPages[page]) {
+        content.innerHTML = browserPages[page];
+        urlBar.value = 'http://' + page + '.linux5.local';
+        browserHistory.push(page);
+        browserHistoryIndex = browserHistory.length - 1;
+    }
+}
+
+function browserBack() {
+    if (browserHistoryIndex > 0) {
+        browserHistoryIndex--;
+        const page = browserHistory[browserHistoryIndex];
+        const content = document.getElementById('browser-content');
+        const urlBar = document.getElementById('browser-url');
+        content.innerHTML = browserPages[page];
+        urlBar.value = 'http://' + page + '.linux5.local';
+    }
+}
+
+function browserForward() {
+    if (browserHistoryIndex < browserHistory.length - 1) {
+        browserHistoryIndex++;
+        const page = browserHistory[browserHistoryIndex];
+        const content = document.getElementById('browser-content');
+        const urlBar = document.getElementById('browser-url');
+        content.innerHTML = browserPages[page];
+        urlBar.value = 'http://' + page + '.linux5.local';
+    }
+}
+
+function browserRefresh() {
+    const page = browserHistory[browserHistoryIndex];
+    const content = document.getElementById('browser-content');
+    content.innerHTML = browserPages[page];
+}
+
+function browserHome() {
+    browserNavigate('welcome');
+}
+
+function browserGo() {
+    showCatMessage("That's not a real website, silly! Try the links on the home page! 😸");
+}
+
+// Notepad Functions
+let notepadContent = {};
+let currentNotepadFile = 'Untitled';
+
+function initializeNotepad() {
+    const textarea = document.getElementById('notepad-textarea');
+    textarea.addEventListener('input', () => {
+        notepadContent[currentNotepadFile] = textarea.value;
+    });
+}
+
+function notepadNew() {
+    currentNotepadFile = 'Untitled';
+    document.getElementById('notepad-textarea').value = '';
+    document.querySelector('#notepad-window .window-title').textContent = 'Notepad - Untitled';
+}
+
+function notepadSave() {
+    const content = document.getElementById('notepad-textarea').value;
+    const filename = prompt('Enter filename:', currentNotepadFile);
+    if (filename) {
+        currentNotepadFile = filename;
+        notepadContent[filename] = content;
+        document.querySelector('#notepad-window .window-title').textContent = 'Notepad - ' + filename;
+        showCatMessage('File saved as "' + filename + '"! 💾');
+    }
+}
+
+function notepadLoad() {
+    const files = Object.keys(notepadContent);
+    if (files.length === 0) {
+        showCatMessage('No saved files found! 🤷');
+        return;
+    }
+    const filename = prompt('Enter filename to open:\n' + files.join('\n'));
+    if (filename && notepadContent[filename] !== undefined) {
+        currentNotepadFile = filename;
+        document.getElementById('notepad-textarea').value = notepadContent[filename];
+        document.querySelector('#notepad-window .window-title').textContent = 'Notepad - ' + filename;
+    } else if (filename) {
+        showCatMessage('File not found! 😿');
+    }
+}
+
+// Calculator Functions
+let calcDisplay = '0';
+let calcFirstOperand = null;
+let calcOperation = null;
+let calcWaitingForOperand = false;
+
+function initializeCalculator() {
+    updateCalcDisplay();
+}
+
+function updateCalcDisplay() {
+    document.getElementById('calculator-display').textContent = calcDisplay;
+}
+
+function calcNumber(num) {
+    if (calcWaitingForOperand) {
+        calcDisplay = num;
+        calcWaitingForOperand = false;
+    } else {
+        calcDisplay = calcDisplay === '0' ? num : calcDisplay + num;
+    }
+    updateCalcDisplay();
+}
+
+function calcOperation(op) {
+    const inputValue = parseFloat(calcDisplay);
+    
+    if (calcFirstOperand === null) {
+        calcFirstOperand = inputValue;
+    } else if (calcOperation) {
+        const result = performCalc(calcFirstOperand, inputValue, calcOperation);
+        calcDisplay = String(result);
+        calcFirstOperand = result;
+    }
+    
+    calcWaitingForOperand = true;
+    calcOperation = op;
+    updateCalcDisplay();
+}
+
+function calcEquals() {
+    const inputValue = parseFloat(calcDisplay);
+    
+    if (calcOperation && calcFirstOperand !== null) {
+        const result = performCalc(calcFirstOperand, inputValue, calcOperation);
+        calcDisplay = String(result);
+        calcFirstOperand = null;
+        calcOperation = null;
+        calcWaitingForOperand = true;
+        updateCalcDisplay();
+    }
+}
+
+function performCalc(first, second, op) {
+    switch(op) {
+        case '+': return first + second;
+        case '-': return first - second;
+        case '*': return first * second;
+        case '/': return second !== 0 ? first / second : 0;
+        default: return second;
+    }
+}
+
+function calcClear() {
+    calcDisplay = '0';
+    calcFirstOperand = null;
+    calcOperation = null;
+    calcWaitingForOperand = false;
+    updateCalcDisplay();
+}
+
+function calcBackspace() {
+    calcDisplay = calcDisplay.length > 1 ? calcDisplay.slice(0, -1) : '0';
+    updateCalcDisplay();
+}
+
+function calcDecimal() {
+    if (!calcDisplay.includes('.')) {
+        calcDisplay += '.';
+        updateCalcDisplay();
+    }
+}
+
+// Paint Functions
+let paintCtx = null;
+let isPainting = false;
+let paintTool = 'pen';
+let paintColor = '#000000';
+let paintSize = 3;
+
+function initializePaint() {
+    const canvas = document.getElementById('paint-canvas');
+    paintCtx = canvas.getContext('2d');
+    
+    canvas.addEventListener('mousedown', startPaint);
+    canvas.addEventListener('mousemove', paint);
+    canvas.addEventListener('mouseup', stopPaint);
+    canvas.addEventListener('mouseleave', stopPaint);
+}
+
+function startPaint(e) {
+    isPainting = true;
+    const rect = e.target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    paintCtx.beginPath();
+    paintCtx.moveTo(x, y);
+}
+
+function paint(e) {
+    if (!isPainting) return;
+    
+    const rect = e.target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    paintCtx.lineWidth = paintSize;
+    paintCtx.lineCap = 'round';
+    paintCtx.strokeStyle = paintTool === 'eraser' ? '#ffffff' : paintColor;
+    
+    paintCtx.lineTo(x, y);
+    paintCtx.stroke();
+}
+
+function stopPaint() {
+    isPainting = false;
+}
+
+function paintSelectTool(tool) {
+    paintTool = tool;
+    document.querySelectorAll('.paint-toolbar button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById('paint-' + tool).classList.add('active');
+}
+
+function paintChangeColor() {
+    paintColor = document.getElementById('paint-color').value;
+}
+
+function paintClear() {
+    const canvas = document.getElementById('paint-canvas');
+    paintCtx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Minesweeper Functions
+let mineBoard = [];
+let mineRows = 8;
+let mineCols = 8;
+let mineCount = 10;
+let mineRevealed = 0;
+let mineGameOver = false;
+let mineTimer = 0;
+let mineTimerInterval = null;
+
+function initializeMinesweeper() {
+    minesweeperNew();
+}
+
+function minesweeperNew() {
+    mineBoard = [];
+    mineRevealed = 0;
+    mineGameOver = false;
+    mineTimer = 0;
+    
+    if (mineTimerInterval) clearInterval(mineTimerInterval);
+    
+    // Create empty board
+    for (let r = 0; r < mineRows; r++) {
+        mineBoard[r] = [];
+        for (let c = 0; c < mineCols; c++) {
+            mineBoard[r][c] = {
+                isMine: false,
+                isRevealed: false,
+                isFlagged: false,
+                adjacentMines: 0
+            };
+        }
+    }
+    
+    // Place mines
+    let placed = 0;
+    while (placed < mineCount) {
+        const r = Math.floor(Math.random() * mineRows);
+        const c = Math.floor(Math.random() * mineCols);
+        if (!mineBoard[r][c].isMine) {
+            mineBoard[r][c].isMine = true;
+            placed++;
+        }
+    }
+    
+    // Calculate adjacent mines
+    for (let r = 0; r < mineRows; r++) {
+        for (let c = 0; c < mineCols; c++) {
+            if (!mineBoard[r][c].isMine) {
+                let count = 0;
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        const nr = r + dr;
+                        const nc = c + dc;
+                        if (nr >= 0 && nr < mineRows && nc >= 0 && nc < mineCols) {
+                            if (mineBoard[nr][nc].isMine) count++;
+                        }
+                    }
+                }
+                mineBoard[r][c].adjacentMines = count;
+            }
+        }
+    }
+    
+    renderMinesweeper();
+    document.getElementById('minesweeper-mines').textContent = mineCount;
+    document.getElementById('minesweeper-time').textContent = mineTimer;
+}
+
+function renderMinesweeper() {
+    const board = document.getElementById('minesweeper-board');
+    board.innerHTML = '';
+    board.style.gridTemplateColumns = `repeat(${mineCols}, 25px)`;
+    
+    for (let r = 0; r < mineRows; r++) {
+        for (let c = 0; c < mineCols; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'mine-cell';
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            
+            if (mineBoard[r][c].isRevealed) {
+                cell.classList.add('revealed');
+                if (mineBoard[r][c].isMine) {
+                    cell.classList.add('mine');
+                } else if (mineBoard[r][c].adjacentMines > 0) {
+                    cell.textContent = mineBoard[r][c].adjacentMines;
+                    cell.style.color = getMineColor(mineBoard[r][c].adjacentMines);
+                }
+            } else if (mineBoard[r][c].isFlagged) {
+                cell.classList.add('flagged');
+            }
+            
+            cell.addEventListener('click', () => mineReveal(r, c));
+            cell.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                mineFlag(r, c);
+            });
+            
+            board.appendChild(cell);
+        }
+    }
+}
+
+function mineReveal(r, c) {
+    if (mineGameOver || mineBoard[r][c].isRevealed || mineBoard[r][c].isFlagged) return;
+    
+    // Start timer on first click
+    if (mineRevealed === 0) {
+        mineTimerInterval = setInterval(() => {
+            mineTimer++;
+            document.getElementById('minesweeper-time').textContent = mineTimer;
+        }, 1000);
+    }
+    
+    if (mineBoard[r][c].isMine) {
+        // Game over
+        mineGameOver = true;
+        if (mineTimerInterval) clearInterval(mineTimerInterval);
+        revealAllMines();
+        showCatMessage("Boom! 💥 You hit a mine! Try again!");
+        return;
+    }
+    
+    // Reveal cell
+    mineBoard[r][c].isRevealed = true;
+    mineRevealed++;
+    
+    // If no adjacent mines, reveal neighbors
+    if (mineBoard[r][c].adjacentMines === 0) {
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                const nr = r + dr;
+                const nc = c + dc;
+                if (nr >= 0 && nr < mineRows && nc >= 0 && nc < mineCols) {
+                    if (!mineBoard[nr][nc].isRevealed) {
+                        mineReveal(nr, nc);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Check win
+    if (mineRevealed === mineRows * mineCols - mineCount) {
+        mineGameOver = true;
+        if (mineTimerInterval) clearInterval(mineTimerInterval);
+        showCatMessage("Congratulations! You won! 🎉");
+    }
+    
+    renderMinesweeper();
+}
+
+function mineFlag(r, c) {
+    if (mineGameOver || mineBoard[r][c].isRevealed) return;
+    mineBoard[r][c].isFlagged = !mineBoard[r][c].isFlagged;
+    renderMinesweeper();
+}
+
+function revealAllMines() {
+    for (let r = 0; r < mineRows; r++) {
+        for (let c = 0; c < mineCols; c++) {
+            if (mineBoard[r][c].isMine) {
+                mineBoard[r][c].isRevealed = true;
+            }
+        }
+    }
+    renderMinesweeper();
+}
+
+function getMineColor(num) {
+    const colors = ['', '#0000FF', '#008000', '#FF0000', '#000080', '#800000', '#008080', '#000000', '#808080'];
+    return colors[num] || '#000';
+}
+
+// Other Window Functions
+function performSearch() {
+    const query = document.getElementById('search-input').value;
+    const results = document.getElementById('search-results');
+    
+    if (!query) {
+        results.innerHTML = '<p>Please enter a search term.</p>';
+        return;
+    }
+    
+    results.innerHTML = `<p>Searching for "${query}"...</p>
+        <p>No results found. This is a simulated search! 🔍</p>`;
+}
+
+function runCommand() {
+    const command = document.getElementById('run-input').value.toLowerCase();
+    closeWindow(document.getElementById('run-window'));
+    
+    const commandMap = {
+        'notepad': 'notepad-window',
+        'calc': 'calculator-window',
+        'calculator': 'calculator-window',
+        'paint': 'paint-window',
+        'browser': 'browser-window',
+        'iexplore': 'browser-window',
+        'games': 'games-window'
+    };
+    
+    if (commandMap[command]) {
+        openWindow(commandMap[command]);
+    } else {
+        showCatMessage(`Command "${command}" not found! Try: notepad, calc, paint, browser 🤔`);
+    }
+}
+
+function performShutdown() {
+    const option = document.querySelector('input[name="shutdown"]:checked').value;
+    closeWindow(document.getElementById('shutdown-window'));
+    
+    const desktop = document.getElementById('desktop');
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #0066cc;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        flex-direction: column;
+        gap: 20px;
+    `;
+    
+    const messages = {
+        'shutdown': 'Shutting down...',
+        'restart': 'Restarting...',
+        'logoff': 'Logging off...'
+    };
+    
+    overlay.innerHTML = `<div>${messages[option]}</div><div style="font-size: 14px;">Just kidding! 😄</div>`;
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+        document.body.removeChild(overlay);
+        showCatMessage("I can't really shut down! I'm just a webpage! 😹");
+    }, 3000);
+}
+
+function updateVolume() {
+    const value = document.getElementById('volume-slider').value;
+    document.getElementById('volume-value').textContent = value;
+}
+
+function showNetworkStatus() {
+    showCatMessage("Network Status: Connected to Linux/5 Network! 🌐");
+}
+
+function toggleCat() {
+    const cat = document.getElementById('cat-pet');
+    const isHidden = cat.style.display === 'none';
+    cat.style.display = isHidden ? 'block' : 'none';
+    if (!isHidden) {
+        showCatMessage("Okay, I'll hide... 😿");
+        setTimeout(() => {
+            cat.style.display = 'block';
+            showCatMessage("Just kidding! I'm back! 😸");
+        }, 3000);
+    }
+}
+
+function changeCatMood() {
+    const moods = ['Happy! 😺', 'Playful! 🐱', 'Sleepy... 😴', 'Excited! 🎉'];
+    const mood = moods[Math.floor(Math.random() * moods.length)];
+    showCatMessage(`My mood is: ${mood}`);
+}
+
+function desktopRefresh() {
+    showCatMessage("Desktop refreshed! ✨");
+}
+
+function desktopNewFolder() {
+    const folderName = prompt('Enter folder name:');
+    if (folderName) {
+        showCatMessage(`Folder "${folderName}" created! (Not really... this is simulated 😊)`);
+    }
+}
+
+function desktopProperties() {
+    showCatMessage("Desktop Properties: Linux/5 XP Edition 🖥️");
+}
+
+// Calendar display
+function displayCalendar() {
+    const calendarDisplay = document.getElementById('calendar-display');
+    const now = new Date();
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const today = now.getDate();
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    let html = `<h3>${monthNames[month]} ${year}</h3>`;
+    html += '<table style="width: 100%; border-collapse: collapse; text-align: center;">';
+    html += '<tr>';
+    dayNames.forEach(day => {
+        html += `<th style="padding: 5px;">${day}</th>`;
+    });
+    html += '</tr><tr>';
+    
+    let dayCount = 1;
+    for (let i = 0; i < 42; i++) {
+        if (i > 0 && i % 7 === 0) {
+            html += '</tr><tr>';
+        }
+        
+        if (i < firstDay || dayCount > daysInMonth) {
+            html += '<td style="padding: 5px;"></td>';
+        } else {
+            const isToday = dayCount === today;
+            const style = isToday ? 'padding: 5px; background: #0066cc; color: white; font-weight: bold;' : 'padding: 5px;';
+            html += `<td style="${style}">${dayCount}</td>`;
+            dayCount++;
+        }
+    }
+    
+    html += '</tr></table>';
+    html += `<p style="margin-top: 10px;"><strong>Current time:</strong> ${now.toLocaleTimeString()}</p>`;
+    
+    calendarDisplay.innerHTML = html;
+}
+
+// Update calendar when window opens
+const originalOpenWindow = openWindow;
+window.openWindow = function(windowId) {
+    originalOpenWindow(windowId);
+    if (windowId === 'calendar-window') {
+        displayCalendar();
+    }
+};
