@@ -461,23 +461,46 @@ Secondary Slave: None
             </div>
         </div>
         <div class="window-content">
-            <h2>Control Panel</h2>
-            <div class="settings-grid">
-                <div class="settings-item">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="margin: 0;">Control Panel</h2>
+                <button onclick="toggleControlPanelView()" class="browser-btn" id="cp-view-toggle">Switch to Classic View</button>
+            </div>
+            <div class="settings-grid" id="control-panel-grid">
+                <div class="settings-item" onclick="openWindow('display-settings-window')">
                     <div class="settings-icon">🖥️</div>
                     <div class="settings-name">Display</div>
                 </div>
-                <div class="settings-item">
+                <div class="settings-item" onclick="openWindow('sound-settings-window')">
                     <div class="settings-icon">🔊</div>
-                    <div class="settings-name">Sound</div>
+                    <div class="settings-name">Sounds</div>
                 </div>
-                <div class="settings-item">
+                <div class="settings-item" onclick="openWindow('mouse-settings-window')">
+                    <div class="settings-icon">🖱️</div>
+                    <div class="settings-name">Mouse</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('taskbar-settings-window')">
+                    <div class="settings-icon">📊</div>
+                    <div class="settings-name">Taskbar</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('internet-settings-window')">
                     <div class="settings-icon">🌐</div>
-                    <div class="settings-name">Network</div>
+                    <div class="settings-name">Internet Options</div>
                 </div>
-                <div class="settings-item">
+                <div class="settings-item" onclick="openWindow('cat-settings-window')">
+                    <div class="settings-icon">🐱</div>
+                    <div class="settings-name">Cat Settings</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('datetime-settings-window')">
+                    <div class="settings-icon">🕐</div>
+                    <div class="settings-name">Date & Time</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('system-settings-window')">
                     <div class="settings-icon">⚙️</div>
                     <div class="settings-name">System</div>
+                </div>
+                <div class="settings-item" onclick="openWindow('accessibility-settings-window')">
+                    <div class="settings-icon">♿</div>
+                    <div class="settings-name">Accessibility</div>
                 </div>
             </div>
         </div>
@@ -590,6 +613,212 @@ Secondary Slave: None
         </div>
     </div>
 
+    <!-- Display Settings -->
+    <div class="window" id="display-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Display Properties</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Desktop Background</h3>
+            <select id="display-wallpaper" onchange="applyDisplaySettings()">
+                <option value="#5A8CC7">Blue Gradient (Default)</option>
+                <option value="#2E5B2E">Green</option>
+                <option value="#8B4513">Brown</option>
+                <option value="#4B0082">Purple</option>
+                <option value="#000000">Black</option>
+            </select>
+            <h3 style="margin-top: 15px;">Font Size</h3>
+            <select id="display-fontsize" onchange="applyDisplaySettings()">
+                <option value="normal">Normal</option>
+                <option value="large">Large</option>
+                <option value="xlarge">Extra Large</option>
+            </select>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyDisplaySettings()">Apply</button>
+                <button onclick="applyDisplaySettings(); closeWindow(document.getElementById('display-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('display-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sound Settings -->
+    <div class="window" id="sound-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Sounds and Audio Devices</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Volume</h3>
+            <input type="range" id="sound-volume" min="0" max="100" value="50" style="width: 100%;" oninput="applySoundSettings()" />
+            <p>Volume: <span id="sound-volume-value">50</span>%</p>
+            <h3 style="margin-top: 15px;">Sound Scheme</h3>
+            <label><input type="checkbox" id="sound-enabled" checked onchange="applySoundSettings()"> Enable system sounds</label>
+            <div style="margin-top: 20px;">
+                <button onclick="testSound()">Test Sound</button>
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applySoundSettings()">Apply</button>
+                <button onclick="applySoundSettings(); closeWindow(document.getElementById('sound-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('sound-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mouse Settings -->
+    <div class="window" id="mouse-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Mouse Properties</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Pointer Speed</h3>
+            <input type="range" id="mouse-speed" min="0.5" max="2" step="0.1" value="1" style="width: 100%;" oninput="applyMouseSettings()" />
+            <p>Speed: <span id="mouse-speed-value">Normal</span></p>
+            <h3 style="margin-top: 15px;">Options</h3>
+            <label><input type="checkbox" id="mouse-trails" onchange="applyMouseSettings()"> Show pointer trails</label>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyMouseSettings()">Apply</button>
+                <button onclick="applyMouseSettings(); closeWindow(document.getElementById('mouse-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('mouse-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Taskbar Settings -->
+    <div class="window" id="taskbar-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Taskbar and Start Menu Properties</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Taskbar Options</h3>
+            <label><input type="checkbox" id="taskbar-autohide" onchange="applyTaskbarSettings()"> Auto-hide the taskbar</label><br/>
+            <label><input type="checkbox" id="taskbar-lock" checked onchange="applyTaskbarSettings()"> Lock the taskbar</label><br/>
+            <label><input type="checkbox" id="taskbar-clock" checked onchange="applyTaskbarSettings()"> Show the clock</label>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyTaskbarSettings()">Apply</button>
+                <button onclick="applyTaskbarSettings(); closeWindow(document.getElementById('taskbar-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('taskbar-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Internet Settings -->
+    <div class="window" id="internet-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Internet Properties</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Home Page</h3>
+            <input type="text" id="internet-homepage" value="http://welcome.linux5.local" style="width: 100%; padding: 5px; margin-bottom: 10px;" />
+            <h3>Proxy Settings</h3>
+            <select id="internet-proxy" onchange="updateProxyPreview()">
+                <option value="0">AllOrigins (Default)</option>
+                <option value="1">CORS Proxy</option>
+                <option value="2">CodeTabs</option>
+                <option value="3">ThingProxy</option>
+            </select>
+            <div style="margin-top: 10px;">
+                <input type="text" id="internet-custom-proxy" placeholder="Custom proxy URL (e.g., https://proxy.com/?url=)" style="width: 100%; padding: 5px;" />
+                <button onclick="addCustomProxy()" style="margin-top: 5px;">Add Custom Proxy</button>
+                <button onclick="testCurrentProxy()" style="margin-top: 5px;">Test Proxy</button>
+            </div>
+            <h3 style="margin-top: 15px;">Privacy</h3>
+            <button onclick="clearBrowserHistory()">Clear Browsing History</button>
+            <button onclick="clearAllData()">Clear All Data</button>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyInternetSettings()">Apply</button>
+                <button onclick="applyInternetSettings(); closeWindow(document.getElementById('internet-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('internet-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date & Time Settings -->
+    <div class="window" id="datetime-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Date and Time Properties</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Current Date & Time</h3>
+            <p id="datetime-current">Loading...</p>
+            <h3 style="margin-top: 15px;">Time Format</h3>
+            <label><input type="radio" name="time-format" value="12" checked onchange="applyDateTimeSettings()"> 12-hour</label><br/>
+            <label><input type="radio" name="time-format" value="24" onchange="applyDateTimeSettings()"> 24-hour</label>
+            <h3 style="margin-top: 15px;">Date Format</h3>
+            <select id="datetime-format" onchange="applyDateTimeSettings()">
+                <option value="en-US">MM/DD/YYYY (US)</option>
+                <option value="en-GB">DD/MM/YYYY (UK)</option>
+                <option value="ja-JP">YYYY/MM/DD (ISO)</option>
+            </select>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyDateTimeSettings()">Apply</button>
+                <button onclick="applyDateTimeSettings(); closeWindow(document.getElementById('datetime-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('datetime-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Settings -->
+    <div class="window" id="system-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">System Properties</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>About Linux/5</h3>
+            <p><strong>Version:</strong> Linux/5 XP Edition v1.0.0</p>
+            <p><strong>Build:</strong> 2026.01.19</p>
+            <p style="margin-top: 10px;">A nostalgic recreation of Windows XP with modern web technologies.</p>
+            <p><strong>Credits:</strong> Built with HTML, CSS, and JavaScript</p>
+            <h3 style="margin-top: 20px;">Settings Management</h3>
+            <button onclick="resetAllSettings()">Reset All Settings</button>
+            <button onclick="exportSettings()">Export Settings</button>
+            <button onclick="importSettings()">Import Settings</button>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="closeWindow(document.getElementById('system-settings-window'))">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accessibility Settings -->
+    <div class="window" id="accessibility-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Accessibility Options</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Display Options</h3>
+            <label><input type="checkbox" id="accessibility-contrast" onchange="applyAccessibilitySettings()"> High contrast mode</label><br/>
+            <label><input type="checkbox" id="accessibility-largetext" onchange="applyAccessibilitySettings()"> Large text</label><br/>
+            <label><input type="checkbox" id="accessibility-animations" checked onchange="applyAccessibilitySettings()"> Enable animations</label>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyAccessibilitySettings()">Apply</button>
+                <button onclick="applyAccessibilitySettings(); closeWindow(document.getElementById('accessibility-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('accessibility-settings-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="window" id="cat-settings-window">
         <div class="window-titlebar">
             <span class="window-title">Cat Settings</span>
@@ -599,14 +828,28 @@ Secondary Slave: None
         </div>
         <div class="window-content">
             <h2>Cat Assistant Settings</h2>
-            <label><input type="checkbox" id="cat-enabled" checked onchange="toggleCat()"> Enable Cat Assistant</label><br/>
-            <label><input type="checkbox" id="cat-auto-speak" checked> Auto-speak messages</label><br/>
-            <h3>Cat Mood:</h3>
-            <select id="cat-mood">
+            <h3>Appearance</h3>
+            <label><input type="checkbox" id="cat-enabled" checked onchange="applyCatSettings()"> Show Cat Assistant</label><br/>
+            <h3 style="margin-top: 15px;">Name</h3>
+            <input type="text" id="cat-name" value="Buddy" style="width: 100%; padding: 5px;" onchange="applyCatSettings()" />
+            <h3 style="margin-top: 15px;">Behavior</h3>
+            <label><input type="checkbox" id="cat-auto-speak" checked onchange="applyCatSettings()"> Auto-speak messages</label><br/>
+            <label>Chat Frequency: <select id="cat-frequency" onchange="applyCatSettings()">
+                <option value="30">Frequent (30s)</option>
+                <option value="60" selected>Normal (60s)</option>
+                <option value="120">Rare (120s)</option>
+            </select></label>
+            <h3 style="margin-top: 15px;">Cat Mood</h3>
+            <select id="cat-mood" onchange="applyCatSettings()">
                 <option value="happy">Happy 😺</option>
-                <option value="playful">Playful 🐱</option>
+                <option value="playful" selected>Playful 🐱</option>
                 <option value="sleepy">Sleepy 😴</option>
             </select>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="applyCatSettings()">Apply</button>
+                <button onclick="applyCatSettings(); closeWindow(document.getElementById('cat-settings-window'))">OK</button>
+                <button onclick="closeWindow(document.getElementById('cat-settings-window'))">Cancel</button>
+            </div>
         </div>
     </div>
 
