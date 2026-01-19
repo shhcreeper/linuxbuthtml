@@ -10,6 +10,13 @@ let activeWindow = null;
 let startMenuOpen = false;
 let bootSequenceCompleted = false;
 
+// Boot sequence timing constants
+const SKIP_ENABLE_DELAY_MS = 1000;
+const BIOS_DURATION_MS = 2500;
+const BOOTLOADER_DURATION_MS = 2500;
+const XP_BOOT_DURATION_MS = 4000;
+const WELCOME_DURATION_MS = 2000;
+
 // Boot Sequence
 function startBootSequence() {
     const bootOverlay = document.getElementById('boot-overlay');
@@ -29,13 +36,18 @@ function startBootSequence() {
     let canSkip = false;
     let currentStage = 0;
     
-    // Enable skip after 1 second
+    // Enable skip after delay
     setTimeout(() => {
         canSkip = true;
-    }, 1000);
+    }, SKIP_ENABLE_DELAY_MS);
     
     // Skip handlers
-    const handleSkip = () => {
+    const handleSkip = (e) => {
+        // For keyboard events, only accept Enter or Space
+        if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') {
+            return;
+        }
+        
         if (canSkip && !bootSequenceCompleted) {
             bootSequenceCompleted = true;
             localStorage.setItem('skipBootSequence', 'true');
@@ -44,42 +56,43 @@ function startBootSequence() {
     };
     
     skipButton.addEventListener('click', handleSkip);
+    skipButton.addEventListener('keydown', handleSkip);
     document.addEventListener('keydown', handleSkip, { once: true });
     
-    // Stage 1: BIOS Screen (2.5 seconds)
+    // Stage 1: BIOS Screen
     setTimeout(() => {
         if (!bootSequenceCompleted) {
             biosScreen.classList.remove('active');
             bootloaderScreen.classList.add('active');
             currentStage = 1;
         }
-    }, 2500);
+    }, BIOS_DURATION_MS);
     
-    // Stage 2: Boot Loader Screen (2.5 seconds)
+    // Stage 2: Boot Loader Screen
     setTimeout(() => {
         if (!bootSequenceCompleted) {
             bootloaderScreen.classList.remove('active');
             xpBootScreen.classList.add('active');
             currentStage = 2;
         }
-    }, 5000);
+    }, BIOS_DURATION_MS + BOOTLOADER_DURATION_MS);
     
-    // Stage 3: XP Boot Screen (4 seconds)
+    // Stage 3: XP Boot Screen
     setTimeout(() => {
         if (!bootSequenceCompleted) {
             xpBootScreen.classList.remove('active');
             welcomeScreen.classList.add('active');
             currentStage = 3;
         }
-    }, 9000);
+    }, BIOS_DURATION_MS + BOOTLOADER_DURATION_MS + XP_BOOT_DURATION_MS);
     
-    // Stage 4: Welcome Screen (2 seconds)
+    // Stage 4: Welcome Screen
     setTimeout(() => {
         if (!bootSequenceCompleted) {
             bootSequenceCompleted = true;
             finishBootSequence();
         }
-    }, 11000);
+    }, BIOS_DURATION_MS + BOOTLOADER_DURATION_MS + XP_BOOT_DURATION_MS + WELCOME_DURATION_MS);
 }
 
 function finishBootSequence() {
@@ -374,15 +387,7 @@ function initializeCat() {
     const cat = document.getElementById('cat-pet');
     const speechBubble = document.getElementById('cat-speech-bubble');
     
-    // Show welcome message only if boot sequence was skipped
-    if (bootSequenceCompleted) {
-        // Boot sequence finished, will show greeting from finishBootSequence
-    } else {
-        setTimeout(() => {
-            showCatMessage("Hi there! I'm your friendly Linux/5 assistant! 😺");
-        }, 2000);
-    }
-    
+    // Welcome message will be shown from finishBootSequence if boot was not skipped
     // Random messages every 30-60 seconds
     scheduleNextCatMessage();
     
