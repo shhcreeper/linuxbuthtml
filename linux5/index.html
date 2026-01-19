@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux/5 - XP Edition</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Desktop Area -->
+    <div id="desktop">
+        <!-- Desktop Icons -->
+        <div class="desktop-icon" data-window="mycomputer">
+            <div class="icon-img">💻</div>
+            <div class="icon-label">My Computer</div>
+        </div>
+        
+        <div class="desktop-icon" data-window="mydocuments">
+            <div class="icon-img">📁</div>
+            <div class="icon-label">My Documents</div>
+        </div>
+        
+        <div class="desktop-icon" data-window="recycle">
+            <div class="icon-img">🗑️</div>
+            <div class="icon-label">Recycle Bin</div>
+        </div>
+        
+        <div class="desktop-icon" data-window="about">
+            <div class="icon-img">ℹ️</div>
+            <div class="icon-label">About Linux/5</div>
+        </div>
+    </div>
+
+    <!-- Windows -->
+    <div class="window" id="mycomputer-window">
+        <div class="window-titlebar">
+            <span class="window-title">My Computer</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>My Computer</h2>
+            <div class="drive-list">
+                <div class="drive-item">
+                    <span class="drive-icon">💾</span>
+                    <span class="drive-name">Local Disk (C:)</span>
+                </div>
+                <div class="drive-item">
+                    <span class="drive-icon">💿</span>
+                    <span class="drive-name">CD Drive (D:)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="mydocuments-window">
+        <div class="window-titlebar">
+            <span class="window-title">My Documents</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>My Documents</h2>
+            <p>This folder is empty.</p>
+        </div>
+    </div>
+
+    <div class="window" id="recycle-window">
+        <div class="window-titlebar">
+            <span class="window-title">Recycle Bin</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Recycle Bin</h2>
+            <p>Recycle Bin is empty.</p>
+        </div>
+    </div>
+
+    <div class="window" id="about-window">
+        <div class="window-titlebar">
+            <span class="window-title">About Linux/5</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Linux/5 - XP Edition</h2>
+            <p>Welcome to Linux/5, featuring a classic Windows XP interface!</p>
+            <p>Meet your new companion, the friendly black cat assistant.</p>
+            <p><strong>Features:</strong></p>
+            <ul>
+                <li>Classic XP Luna theme</li>
+                <li>Draggable windows and icons</li>
+                <li>Interactive black cat pet</li>
+                <li>Built with pure HTML, CSS, and JavaScript</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Black Cat Pet -->
+    <div id="cat-pet">
+        <div id="cat-body">
+            <div id="cat-ear-left"></div>
+            <div id="cat-ear-right"></div>
+            <div id="cat-head">
+                <div id="cat-eye-left"></div>
+                <div id="cat-eye-right"></div>
+                <div id="cat-nose"></div>
+                <div id="cat-mouth"></div>
+            </div>
+            <div id="cat-tail"></div>
+        </div>
+        <div id="cat-speech-bubble" class="hidden">
+            <div class="speech-text"></div>
+        </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div id="taskbar">
+        <button id="start-button">
+            <span class="start-text">start</span>
+        </button>
+        
+        <div id="taskbar-buttons"></div>
+        
+        <div id="system-tray">
+            <span id="clock">12:00 PM</span>
+        </div>
+    </div>
+
+    <!-- Start Menu -->
+    <div id="start-menu" class="hidden">
+        <div class="start-menu-header">
+            <div class="user-info">
+                <div class="user-icon">👤</div>
+                <div class="user-name">Guest User</div>
+            </div>
+        </div>
+        <div class="start-menu-content">
+            <div class="start-menu-section">
+                <div class="start-menu-item">📧 Internet</div>
+                <div class="start-menu-item">🎵 Media Player</div>
+                <div class="start-menu-item">🎮 Games</div>
+                <div class="start-menu-item">📝 Notepad</div>
+                <div class="start-menu-item">🖥️ Command Prompt</div>
+            </div>
+            <div class="start-menu-divider"></div>
+            <div class="start-menu-section">
+                <div class="start-menu-item">⚙️ Control Panel</div>
+                <div class="start-menu-item">🔍 Search</div>
+                <div class="start-menu-item">❓ Help and Support</div>
+            </div>
+        </div>
+        <div class="start-menu-footer">
+            <div class="start-menu-item">🔌 Turn Off Computer</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
