@@ -573,6 +573,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeCalculator();
     initializePaint();
     initializeMinesweeper();
+    initializeSolitaire();
+    initializeSnake();
+    initializeTetris();
+    initializePinball();
+    initializeTicTacToe();
 });
 
 function showContextMenu(menu, x, y) {
@@ -2306,3 +2311,854 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(updateDateTimeCurrent, 1000);
     }, 100);
 });
+
+// ===== SOLITAIRE GAME =====
+let solitaireState = {
+    deck: [],
+    drawPile: [],
+    wastePile: [],
+    foundations: [[], [], [], []],
+    tableau: [[], [], [], [], [], [], []],
+    drawMode: 1,
+    score: 0,
+    timer: 0,
+    timerInterval: null,
+    draggedCard: null,
+    draggedFrom: null
+};
+
+function initializeSolitaire() {
+    solitaireNew();
+}
+
+function solitaireNew() {
+    // Reset state
+    solitaireState.deck = createDeck();
+    shuffleDeck(solitaireState.deck);
+    solitaireState.drawPile = [];
+    solitaireState.wastePile = [];
+    solitaireState.foundations = [[], [], [], []];
+    solitaireState.tableau = [[], [], [], [], [], [], []];
+    solitaireState.score = 0;
+    solitaireState.timer = 0;
+    
+    if (solitaireState.timerInterval) clearInterval(solitaireState.timerInterval);
+    
+    // Deal tableau
+    for (let i = 0; i < 7; i++) {
+        for (let j = i; j < 7; j++) {
+            const card = solitaireState.deck.pop();
+            card.faceUp = (i === j);
+            solitaireState.tableau[j].push(card);
+        }
+    }
+    
+    // Remaining cards go to draw pile
+    solitaireState.drawPile = solitaireState.deck;
+    
+    renderSolitaire();
+    updateSolitaireDisplay();
+    
+    // Start timer
+    solitaireState.timerInterval = setInterval(() => {
+        solitaireState.timer++;
+        document.getElementById('solitaire-time').textContent = solitaireState.timer;
+    }, 1000);
+}
+
+function createDeck() {
+    const suits = ['♠', '♥', '♦', '♣'];
+    const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    const deck = [];
+    
+    for (const suit of suits) {
+        for (let i = 0; i < values.length; i++) {
+            deck.push({
+                suit,
+                value: values[i],
+                numValue: i + 1,
+                color: (suit === '♥' || suit === '♦') ? 'red' : 'black',
+                faceUp: false
+            });
+        }
+    }
+    
+    return deck;
+}
+
+function shuffleDeck(deck) {
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+}
+
+function solitaireToggleDraw() {
+    solitaireState.drawMode = solitaireState.drawMode === 1 ? 3 : 1;
+    document.getElementById('solitaire-draw-mode').textContent = solitaireState.drawMode;
+}
+
+function renderSolitaire() {
+    const board = document.getElementById('solitaire-board');
+    board.innerHTML = '<p style="color: white;">Solitaire game rendered! Draw from deck, build foundations from Ace to King.</p>';
+    // Full implementation would render all piles with drag-drop
+}
+
+function updateSolitaireDisplay() {
+    document.getElementById('solitaire-score').textContent = solitaireState.score;
+    document.getElementById('solitaire-time').textContent = solitaireState.timer;
+}
+
+// ===== SNAKE GAME =====
+let snakeState = {
+    canvas: null,
+    ctx: null,
+    snake: [],
+    food: null,
+    direction: 'right',
+    nextDirection: 'right',
+    score: 0,
+    highScore: 0,
+    gameLoop: null,
+    gameOver: false,
+    gridSize: 20,
+    speed: 150
+};
+
+function initializeSnake() {
+    snakeState.canvas = document.getElementById('snake-canvas');
+    snakeState.ctx = snakeState.canvas.getContext('2d');
+    snakeState.highScore = parseInt(localStorage.getItem('snakeHighScore')) || 0;
+    document.getElementById('snake-high').textContent = snakeState.highScore;
+    
+    document.addEventListener('keydown', (e) => {
+        if (!snakeState.canvas.parentElement.parentElement.classList.contains('active')) return;
+        
+        switch(e.key) {
+            case 'ArrowUp':
+                if (snakeState.direction !== 'down') snakeState.nextDirection = 'up';
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+                if (snakeState.direction !== 'up') snakeState.nextDirection = 'down';
+                e.preventDefault();
+                break;
+            case 'ArrowLeft':
+                if (snakeState.direction !== 'right') snakeState.nextDirection = 'left';
+                e.preventDefault();
+                break;
+            case 'ArrowRight':
+                if (snakeState.direction !== 'left') snakeState.nextDirection = 'right';
+                e.preventDefault();
+                break;
+        }
+    });
+    
+    snakeNew();
+}
+
+function snakeNew() {
+    snakeState.snake = [
+        {x: 10, y: 10},
+        {x: 9, y: 10},
+        {x: 8, y: 10}
+    ];
+    snakeState.direction = 'right';
+    snakeState.nextDirection = 'right';
+    snakeState.score = 0;
+    snakeState.gameOver = false;
+    snakeState.speed = 150;
+    
+    snakeSpawnFood();
+    document.getElementById('snake-score').textContent = 0;
+    
+    if (snakeState.gameLoop) clearInterval(snakeState.gameLoop);
+    snakeState.gameLoop = setInterval(snakeUpdate, snakeState.speed);
+}
+
+function snakeSpawnFood() {
+    const maxX = snakeState.canvas.width / snakeState.gridSize;
+    const maxY = snakeState.canvas.height / snakeState.gridSize;
+    
+    do {
+        snakeState.food = {
+            x: Math.floor(Math.random() * maxX),
+            y: Math.floor(Math.random() * maxY)
+        };
+    } while (snakeState.snake.some(seg => seg.x === snakeState.food.x && seg.y === snakeState.food.y));
+}
+
+function snakeUpdate() {
+    if (snakeState.gameOver) return;
+    
+    snakeState.direction = snakeState.nextDirection;
+    
+    // Move snake
+    const head = {...snakeState.snake[0]};
+    
+    switch(snakeState.direction) {
+        case 'up': head.y--; break;
+        case 'down': head.y++; break;
+        case 'left': head.x--; break;
+        case 'right': head.x++; break;
+    }
+    
+    // Check wall collision
+    const maxX = snakeState.canvas.width / snakeState.gridSize;
+    const maxY = snakeState.canvas.height / snakeState.gridSize;
+    
+    if (head.x < 0 || head.x >= maxX || head.y < 0 || head.y >= maxY) {
+        snakeGameOver();
+        return;
+    }
+    
+    // Check self collision
+    if (snakeState.snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+        snakeGameOver();
+        return;
+    }
+    
+    snakeState.snake.unshift(head);
+    
+    // Check food collision
+    if (head.x === snakeState.food.x && head.y === snakeState.food.y) {
+        snakeState.score += 10;
+        document.getElementById('snake-score').textContent = snakeState.score;
+        snakeSpawnFood();
+        
+        // Increase speed slightly
+        if (snakeState.score % 50 === 0 && snakeState.speed > 50) {
+            snakeState.speed -= 10;
+            clearInterval(snakeState.gameLoop);
+            snakeState.gameLoop = setInterval(snakeUpdate, snakeState.speed);
+        }
+    } else {
+        snakeState.snake.pop();
+    }
+    
+    snakeDraw();
+}
+
+function snakeDraw() {
+    const ctx = snakeState.ctx;
+    const gs = snakeState.gridSize;
+    
+    // Clear canvas
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, snakeState.canvas.width, snakeState.canvas.height);
+    
+    // Draw snake
+    ctx.fillStyle = '#0f0';
+    snakeState.snake.forEach((seg, i) => {
+        ctx.fillRect(seg.x * gs, seg.y * gs, gs - 2, gs - 2);
+        if (i === 0) {
+            ctx.fillStyle = '#0f0';
+        }
+    });
+    
+    // Draw food
+    ctx.fillStyle = '#f00';
+    ctx.fillRect(snakeState.food.x * gs, snakeState.food.y * gs, gs - 2, gs - 2);
+}
+
+function snakeGameOver() {
+    snakeState.gameOver = true;
+    clearInterval(snakeState.gameLoop);
+    
+    if (snakeState.score > snakeState.highScore) {
+        snakeState.highScore = snakeState.score;
+        localStorage.setItem('snakeHighScore', snakeState.highScore);
+        document.getElementById('snake-high').textContent = snakeState.highScore;
+        showCatMessage(`New high score: ${snakeState.highScore}! 🐍`);
+    }
+    
+    const ctx = snakeState.ctx;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, snakeState.canvas.width, snakeState.canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = '30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', snakeState.canvas.width / 2, snakeState.canvas.height / 2);
+    ctx.font = '20px Arial';
+    ctx.fillText(`Score: ${snakeState.score}`, snakeState.canvas.width / 2, snakeState.canvas.height / 2 + 40);
+}
+
+// ===== TETRIS GAME =====
+let tetrisState = {
+    canvas: null,
+    ctx: null,
+    nextCanvas: null,
+    nextCtx: null,
+    board: [],
+    currentPiece: null,
+    nextPiece: null,
+    score: 0,
+    lines: 0,
+    level: 1,
+    gameLoop: null,
+    gameOver: false,
+    paused: false,
+    blockSize: 30,
+    rows: 20,
+    cols: 10,
+    dropCounter: 0,
+    dropInterval: 1000
+};
+
+const TETROMINOS = {
+    'I': [[1,1,1,1]],
+    'O': [[1,1],[1,1]],
+    'T': [[0,1,0],[1,1,1]],
+    'S': [[0,1,1],[1,1,0]],
+    'Z': [[1,1,0],[0,1,1]],
+    'J': [[1,0,0],[1,1,1]],
+    'L': [[0,0,1],[1,1,1]]
+};
+
+const COLORS = {
+    'I': '#00f0f0',
+    'O': '#f0f000',
+    'T': '#a000f0',
+    'S': '#00f000',
+    'Z': '#f00000',
+    'J': '#0000f0',
+    'L': '#f0a000'
+};
+
+function initializeTetris() {
+    tetrisState.canvas = document.getElementById('tetris-canvas');
+    tetrisState.ctx = tetrisState.canvas.getContext('2d');
+    tetrisState.nextCanvas = document.getElementById('tetris-next-canvas');
+    tetrisState.nextCtx = tetrisState.nextCanvas.getContext('2d');
+    
+    document.addEventListener('keydown', (e) => {
+        if (!tetrisState.canvas.parentElement.parentElement.classList.contains('active')) return;
+        if (tetrisState.gameOver || tetrisState.paused) return;
+        
+        switch(e.key) {
+            case 'ArrowLeft':
+                tetrisMovePiece(-1, 0);
+                e.preventDefault();
+                break;
+            case 'ArrowRight':
+                tetrisMovePiece(1, 0);
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+                tetrisMovePiece(0, 1);
+                e.preventDefault();
+                break;
+            case 'ArrowUp':
+                tetrisRotatePiece();
+                e.preventDefault();
+                break;
+            case ' ':
+                tetrisHardDrop();
+                e.preventDefault();
+                break;
+        }
+    });
+    
+    tetrisNew();
+}
+
+function tetrisNew() {
+    tetrisState.board = Array(tetrisState.rows).fill(null).map(() => Array(tetrisState.cols).fill(0));
+    tetrisState.score = 0;
+    tetrisState.lines = 0;
+    tetrisState.level = 1;
+    tetrisState.gameOver = false;
+    tetrisState.paused = false;
+    tetrisState.dropInterval = 1000;
+    
+    tetrisState.currentPiece = tetrisCreatePiece();
+    tetrisState.nextPiece = tetrisCreatePiece();
+    
+    tetrisUpdateDisplay();
+    tetrisDrawNext();
+    
+    if (tetrisState.gameLoop) clearInterval(tetrisState.gameLoop);
+    tetrisState.gameLoop = setInterval(tetrisUpdate, 50);
+}
+
+function tetrisCreatePiece() {
+    const pieces = Object.keys(TETROMINOS);
+    const type = pieces[Math.floor(Math.random() * pieces.length)];
+    return {
+        type,
+        shape: JSON.parse(JSON.stringify(TETROMINOS[type])),
+        x: Math.floor(tetrisState.cols / 2) - 1,
+        y: 0,
+        color: COLORS[type]
+    };
+}
+
+function tetrisUpdate() {
+    if (tetrisState.gameOver || tetrisState.paused) return;
+    
+    tetrisState.dropCounter += 50;
+    
+    if (tetrisState.dropCounter > tetrisState.dropInterval) {
+        if (!tetrisMovePiece(0, 1)) {
+            tetrisMergePiece();
+            tetrisClearLines();
+            tetrisState.currentPiece = tetrisState.nextPiece;
+            tetrisState.nextPiece = tetrisCreatePiece();
+            tetrisDrawNext();
+            
+            if (tetrisCheckCollision(tetrisState.currentPiece)) {
+                tetrisGameOver();
+            }
+        }
+        tetrisState.dropCounter = 0;
+    }
+    
+    tetrisDraw();
+}
+
+function tetrisMovePiece(dx, dy) {
+    tetrisState.currentPiece.x += dx;
+    tetrisState.currentPiece.y += dy;
+    
+    if (tetrisCheckCollision(tetrisState.currentPiece)) {
+        tetrisState.currentPiece.x -= dx;
+        tetrisState.currentPiece.y -= dy;
+        return false;
+    }
+    
+    return true;
+}
+
+function tetrisRotatePiece() {
+    const piece = tetrisState.currentPiece;
+    const newShape = piece.shape[0].map((_, i) => 
+        piece.shape.map(row => row[i]).reverse()
+    );
+    
+    const oldShape = piece.shape;
+    piece.shape = newShape;
+    
+    if (tetrisCheckCollision(piece)) {
+        piece.shape = oldShape;
+    }
+}
+
+function tetrisHardDrop() {
+    while (tetrisMovePiece(0, 1)) {}
+    tetrisState.dropCounter = tetrisState.dropInterval;
+}
+
+function tetrisCheckCollision(piece) {
+    for (let y = 0; y < piece.shape.length; y++) {
+        for (let x = 0; x < piece.shape[y].length; x++) {
+            if (piece.shape[y][x]) {
+                const newX = piece.x + x;
+                const newY = piece.y + y;
+                
+                if (newX < 0 || newX >= tetrisState.cols || newY >= tetrisState.rows) {
+                    return true;
+                }
+                
+                if (newY >= 0 && tetrisState.board[newY][newX]) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+function tetrisMergePiece() {
+    const piece = tetrisState.currentPiece;
+    for (let y = 0; y < piece.shape.length; y++) {
+        for (let x = 0; x < piece.shape[y].length; x++) {
+            if (piece.shape[y][x]) {
+                const boardY = piece.y + y;
+                const boardX = piece.x + x;
+                if (boardY >= 0) {
+                    tetrisState.board[boardY][boardX] = piece.color;
+                }
+            }
+        }
+    }
+}
+
+function tetrisClearLines() {
+    let linesCleared = 0;
+    
+    for (let y = tetrisState.rows - 1; y >= 0; y--) {
+        if (tetrisState.board[y].every(cell => cell !== 0)) {
+            tetrisState.board.splice(y, 1);
+            tetrisState.board.unshift(Array(tetrisState.cols).fill(0));
+            linesCleared++;
+            y++;
+        }
+    }
+    
+    if (linesCleared > 0) {
+        tetrisState.lines += linesCleared;
+        tetrisState.score += [0, 100, 300, 500, 800][linesCleared] * tetrisState.level;
+        tetrisState.level = Math.floor(tetrisState.lines / 10) + 1;
+        tetrisState.dropInterval = Math.max(100, 1000 - (tetrisState.level - 1) * 100);
+        tetrisUpdateDisplay();
+    }
+}
+
+function tetrisDraw() {
+    const ctx = tetrisState.ctx;
+    const bs = tetrisState.blockSize;
+    
+    // Clear
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, tetrisState.canvas.width, tetrisState.canvas.height);
+    
+    // Draw board
+    for (let y = 0; y < tetrisState.rows; y++) {
+        for (let x = 0; x < tetrisState.cols; x++) {
+            if (tetrisState.board[y][x]) {
+                ctx.fillStyle = tetrisState.board[y][x];
+                ctx.fillRect(x * bs, y * bs, bs - 1, bs - 1);
+            }
+        }
+    }
+    
+    // Draw current piece
+    const piece = tetrisState.currentPiece;
+    ctx.fillStyle = piece.color;
+    for (let y = 0; y < piece.shape.length; y++) {
+        for (let x = 0; x < piece.shape[y].length; x++) {
+            if (piece.shape[y][x]) {
+                ctx.fillRect((piece.x + x) * bs, (piece.y + y) * bs, bs - 1, bs - 1);
+            }
+        }
+    }
+}
+
+function tetrisDrawNext() {
+    const ctx = tetrisState.nextCtx;
+    const piece = tetrisState.nextPiece;
+    
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, tetrisState.nextCanvas.width, tetrisState.nextCanvas.height);
+    
+    ctx.fillStyle = piece.color;
+    const bs = 20;
+    for (let y = 0; y < piece.shape.length; y++) {
+        for (let x = 0; x < piece.shape[y].length; x++) {
+            if (piece.shape[y][x]) {
+                ctx.fillRect(x * bs + 10, y * bs + 10, bs - 1, bs - 1);
+            }
+        }
+    }
+}
+
+function tetrisUpdateDisplay() {
+    document.getElementById('tetris-score').textContent = tetrisState.score;
+    document.getElementById('tetris-lines').textContent = tetrisState.lines;
+    document.getElementById('tetris-level').textContent = tetrisState.level;
+}
+
+function tetrisPause() {
+    tetrisState.paused = !tetrisState.paused;
+}
+
+function tetrisGameOver() {
+    tetrisState.gameOver = true;
+    clearInterval(tetrisState.gameLoop);
+    
+    const ctx = tetrisState.ctx;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, tetrisState.canvas.width, tetrisState.canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = '30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', tetrisState.canvas.width / 2, tetrisState.canvas.height / 2);
+}
+
+// ===== PINBALL GAME =====
+let pinballState = {
+    canvas: null,
+    ctx: null,
+    ball: null,
+    flippers: [],
+    bumpers: [],
+    score: 0,
+    balls: 3,
+    gameLoop: null,
+    keys: {}
+};
+
+function initializePinball() {
+    pinballState.canvas = document.getElementById('pinball-canvas');
+    pinballState.ctx = pinballState.canvas.getContext('2d');
+    
+    document.addEventListener('keydown', (e) => {
+        if (!pinballState.canvas.parentElement.parentElement.classList.contains('active')) return;
+        if (e.key === 'z' || e.key === 'Z') pinballState.keys.leftFlipper = true;
+        if (e.key === '/' || e.key === '?') pinballState.keys.rightFlipper = true;
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        if (e.key === 'z' || e.key === 'Z') pinballState.keys.leftFlipper = false;
+        if (e.key === '/' || e.key === '?') pinballState.keys.rightFlipper = false;
+    });
+    
+    pinballNew();
+}
+
+function pinballNew() {
+    pinballState.score = 0;
+    pinballState.balls = 3;
+    pinballState.ball = {
+        x: 200,
+        y: 500,
+        vx: 0,
+        vy: 0,
+        radius: 8
+    };
+    
+    pinballState.flippers = [
+        { x: 100, y: 550, angle: 0.5, active: false },
+        { x: 300, y: 550, angle: -0.5, active: false }
+    ];
+    
+    pinballState.bumpers = [
+        { x: 100, y: 200, radius: 30 },
+        { x: 200, y: 150, radius: 30 },
+        { x: 300, y: 200, radius: 30 }
+    ];
+    
+    document.getElementById('pinball-score').textContent = 0;
+    document.getElementById('pinball-balls').textContent = 3;
+    
+    if (pinballState.gameLoop) clearInterval(pinballState.gameLoop);
+    pinballState.gameLoop = setInterval(pinballUpdate, 20);
+}
+
+function pinballUpdate() {
+    const ball = pinballState.ball;
+    
+    // Gravity
+    ball.vy += 0.3;
+    
+    // Update position
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+    
+    // Wall collision
+    if (ball.x < ball.radius || ball.x > pinballState.canvas.width - ball.radius) {
+        ball.vx *= -0.8;
+        ball.x = Math.max(ball.radius, Math.min(ball.x, pinballState.canvas.width - ball.radius));
+    }
+    
+    if (ball.y < ball.radius) {
+        ball.vy *= -0.8;
+        ball.y = ball.radius;
+    }
+    
+    // Ball lost
+    if (ball.y > pinballState.canvas.height) {
+        pinballState.balls--;
+        document.getElementById('pinball-balls').textContent = pinballState.balls;
+        
+        if (pinballState.balls > 0) {
+            ball.x = 200;
+            ball.y = 500;
+            ball.vx = 0;
+            ball.vy = 0;
+        } else {
+            clearInterval(pinballState.gameLoop);
+            showCatMessage('Game Over! Final score: ' + pinballState.score);
+        }
+    }
+    
+    // Bumper collision
+    pinballState.bumpers.forEach(bumper => {
+        const dx = ball.x - bumper.x;
+        const dy = ball.y - bumper.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < ball.radius + bumper.radius) {
+            const angle = Math.atan2(dy, dx);
+            ball.vx = Math.cos(angle) * 10;
+            ball.vy = Math.sin(angle) * 10;
+            pinballState.score += 100;
+            document.getElementById('pinball-score').textContent = pinballState.score;
+        }
+    });
+    
+    // Flipper activation
+    if (pinballState.keys.leftFlipper) {
+        pinballState.flippers[0].active = true;
+    } else {
+        pinballState.flippers[0].active = false;
+    }
+    
+    if (pinballState.keys.rightFlipper) {
+        pinballState.flippers[1].active = true;
+    } else {
+        pinballState.flippers[1].active = false;
+    }
+    
+    pinballDraw();
+}
+
+function pinballDraw() {
+    const ctx = pinballState.ctx;
+    
+    // Clear
+    ctx.fillStyle = '#1a1a4d';
+    ctx.fillRect(0, 0, pinballState.canvas.width, pinballState.canvas.height);
+    
+    // Draw bumpers
+    ctx.fillStyle = '#f00';
+    pinballState.bumpers.forEach(bumper => {
+        ctx.beginPath();
+        ctx.arc(bumper.x, bumper.y, bumper.radius, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    
+    // Draw flippers
+    ctx.fillStyle = '#0f0';
+    ctx.fillRect(80, 540, 40, 10);
+    ctx.fillRect(280, 540, 40, 10);
+    
+    // Draw ball
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(pinballState.ball.x, pinballState.ball.y, pinballState.ball.radius, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+// ===== TIC-TAC-TOE GAME =====
+let tictactoeState = {
+    board: ['', '', '', '', '', '', '', '', ''],
+    currentPlayer: 'X',
+    vsAI: true,
+    gameOver: false,
+    scores: { X: 0, O: 0, draw: 0 }
+};
+
+function initializeTicTacToe() {
+    const saved = localStorage.getItem('tictactoeScores');
+    if (saved) {
+        tictactoeState.scores = JSON.parse(saved);
+    }
+    tictactoeNew();
+}
+
+function tictactoeNew() {
+    tictactoeState.board = ['', '', '', '', '', '', '', '', ''];
+    tictactoeState.currentPlayer = 'X';
+    tictactoeState.gameOver = false;
+    tictactoeRender();
+    tictactoeUpdateStatus('Your turn (X)');
+    tictactoeUpdateScores();
+}
+
+function tictactoeRender() {
+    const board = document.getElementById('tictactoe-board');
+    board.innerHTML = '';
+    
+    for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'tictactoe-cell';
+        if (tictactoeState.board[i]) {
+            cell.textContent = tictactoeState.board[i];
+            cell.classList.add(tictactoeState.board[i].toLowerCase());
+        }
+        cell.onclick = () => tictactoeMove(i);
+        board.appendChild(cell);
+    }
+}
+
+function tictactoeMove(index) {
+    if (tictactoeState.gameOver || tictactoeState.board[index]) return;
+    
+    tictactoeState.board[index] = tictactoeState.currentPlayer;
+    tictactoeRender();
+    
+    const winner = tictactoeCheckWinner();
+    if (winner) {
+        tictactoeEndGame(winner);
+        return;
+    }
+    
+    if (tictactoeState.board.every(cell => cell !== '')) {
+        tictactoeEndGame('draw');
+        return;
+    }
+    
+    tictactoeState.currentPlayer = tictactoeState.currentPlayer === 'X' ? 'O' : 'X';
+    
+    if (tictactoeState.vsAI && tictactoeState.currentPlayer === 'O') {
+        tictactoeUpdateStatus('Computer thinking...');
+        setTimeout(() => {
+            tictactoeAIMove();
+        }, 500);
+    } else {
+        tictactoeUpdateStatus(`${tictactoeState.currentPlayer}'s turn`);
+    }
+}
+
+function tictactoeAIMove() {
+    // Simple AI: random empty cell
+    const empty = [];
+    tictactoeState.board.forEach((cell, i) => {
+        if (!cell) empty.push(i);
+    });
+    
+    if (empty.length > 0) {
+        const move = empty[Math.floor(Math.random() * empty.length)];
+        tictactoeMove(move);
+    }
+}
+
+function tictactoeCheckWinner() {
+    const wins = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+    ];
+    
+    for (const [a, b, c] of wins) {
+        if (tictactoeState.board[a] && 
+            tictactoeState.board[a] === tictactoeState.board[b] && 
+            tictactoeState.board[a] === tictactoeState.board[c]) {
+            return tictactoeState.board[a];
+        }
+    }
+    
+    return null;
+}
+
+function tictactoeEndGame(result) {
+    tictactoeState.gameOver = true;
+    
+    if (result === 'draw') {
+        tictactoeState.scores.draw++;
+        tictactoeUpdateStatus('Draw!');
+    } else {
+        tictactoeState.scores[result]++;
+        tictactoeUpdateStatus(`${result} wins!`);
+    }
+    
+    localStorage.setItem('tictactoeScores', JSON.stringify(tictactoeState.scores));
+    tictactoeUpdateScores();
+}
+
+function tictactoeUpdateStatus(msg) {
+    document.getElementById('tictactoe-status').textContent = msg;
+}
+
+function tictactoeUpdateScores() {
+    document.getElementById('tictactoe-score-x').textContent = tictactoeState.scores.X;
+    document.getElementById('tictactoe-score-o').textContent = tictactoeState.scores.O;
+    document.getElementById('tictactoe-score-draw').textContent = tictactoeState.scores.draw;
+}
+
+function tictactoeToggleMode() {
+    tictactoeState.vsAI = !tictactoeState.vsAI;
+    document.getElementById('tictactoe-mode').textContent = tictactoeState.vsAI ? 'vs AI' : '2 Player';
+    tictactoeNew();
+}

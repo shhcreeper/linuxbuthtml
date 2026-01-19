@@ -414,6 +414,22 @@ Secondary Slave: None
                     <div class="game-icon">🃏</div>
                     <div class="game-name">Solitaire</div>
                 </div>
+                <div class="game-item" onclick="openWindow('snake-window')">
+                    <div class="game-icon">🐍</div>
+                    <div class="game-name">Snake</div>
+                </div>
+                <div class="game-item" onclick="openWindow('tetris-window')">
+                    <div class="game-icon">🟦</div>
+                    <div class="game-name">Tetris</div>
+                </div>
+                <div class="game-item" onclick="openWindow('pinball-window')">
+                    <div class="game-icon">🎯</div>
+                    <div class="game-name">Pinball</div>
+                </div>
+                <div class="game-item" onclick="openWindow('tictactoe-window')">
+                    <div class="game-icon">⭕</div>
+                    <div class="game-name">Tic-Tac-Toe</div>
+                </div>
             </div>
         </div>
     </div>
@@ -444,10 +460,111 @@ Secondary Slave: None
                 <button class="window-btn close">✕</button>
             </div>
         </div>
-        <div class="window-content">
-            <h2>Solitaire</h2>
-            <p>Coming soon! For now, enjoy Minesweeper! 🃏</p>
-            <button onclick="closeWindow(document.getElementById('solitaire-window')); openWindow('minesweeper-window')">Play Minesweeper Instead</button>
+        <div class="window-content solitaire-content">
+            <div class="solitaire-header">
+                <button onclick="solitaireNew()">New Game</button>
+                <button onclick="solitaireToggleDraw()">Draw <span id="solitaire-draw-mode">1</span></button>
+                <span>Score: <span id="solitaire-score">0</span></span>
+                <span>Time: <span id="solitaire-time">0</span>s</span>
+            </div>
+            <div id="solitaire-board"></div>
+        </div>
+    </div>
+
+    <div class="window" id="snake-window">
+        <div class="window-titlebar">
+            <span class="window-title">Snake</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content snake-content">
+            <div class="snake-header">
+                <button onclick="snakeNew()">New Game</button>
+                <span>Score: <span id="snake-score">0</span></span>
+                <span>High: <span id="snake-high">0</span></span>
+            </div>
+            <canvas id="snake-canvas" width="400" height="400"></canvas>
+            <div class="snake-info">Use arrow keys to move</div>
+        </div>
+    </div>
+
+    <div class="window" id="tetris-window">
+        <div class="window-titlebar">
+            <span class="window-title">Tetris</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content tetris-content">
+            <div class="tetris-main">
+                <canvas id="tetris-canvas" width="300" height="600"></canvas>
+                <div class="tetris-side">
+                    <div class="tetris-header">
+                        <button onclick="tetrisNew()">New Game</button>
+                        <button onclick="tetrisPause()">Pause</button>
+                    </div>
+                    <div class="tetris-stats">
+                        <div>Score: <span id="tetris-score">0</span></div>
+                        <div>Lines: <span id="tetris-lines">0</span></div>
+                        <div>Level: <span id="tetris-level">1</span></div>
+                    </div>
+                    <div class="tetris-next">
+                        <div style="font-weight: bold; margin-bottom: 10px;">Next:</div>
+                        <canvas id="tetris-next-canvas" width="80" height="80"></canvas>
+                    </div>
+                    <div class="tetris-controls">
+                        <div>← → : Move</div>
+                        <div>↑ : Rotate</div>
+                        <div>↓ : Drop</div>
+                        <div>Space: Fast Drop</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="pinball-window">
+        <div class="window-titlebar">
+            <span class="window-title">Pinball</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content pinball-content">
+            <div class="pinball-header">
+                <button onclick="pinballNew()">New Game</button>
+                <span>Score: <span id="pinball-score">0</span></span>
+                <span>Balls: <span id="pinball-balls">3</span></span>
+            </div>
+            <canvas id="pinball-canvas" width="400" height="600"></canvas>
+            <div class="pinball-info">Press Z for left flipper, / for right flipper</div>
+        </div>
+    </div>
+
+    <div class="window" id="tictactoe-window">
+        <div class="window-titlebar">
+            <span class="window-title">Tic-Tac-Toe</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content tictactoe-content">
+            <div class="tictactoe-header">
+                <button onclick="tictactoeNew()">New Game</button>
+                <button onclick="tictactoeToggleMode()">Mode: <span id="tictactoe-mode">vs AI</span></button>
+            </div>
+            <div id="tictactoe-board"></div>
+            <div class="tictactoe-status" id="tictactoe-status">Your turn (X)</div>
+            <div class="tictactoe-scores">
+                <span>X: <span id="tictactoe-score-x">0</span></span>
+                <span>Draws: <span id="tictactoe-score-draw">0</span></span>
+                <span>O: <span id="tictactoe-score-o">0</span></span>
+            </div>
         </div>
     </div>
 
