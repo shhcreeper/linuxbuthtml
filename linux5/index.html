@@ -29,6 +29,31 @@
             <div class="icon-img">ℹ️</div>
             <div class="icon-label">About Linux/5</div>
         </div>
+        
+        <div class="desktop-icon" data-window="browser">
+            <div class="icon-img">🌐</div>
+            <div class="icon-label">Internet Explorer</div>
+        </div>
+        
+        <div class="desktop-icon" data-window="notepad">
+            <div class="icon-img">📝</div>
+            <div class="icon-label">Notepad</div>
+        </div>
+        
+        <div class="desktop-icon" data-window="calculator">
+            <div class="icon-img">🔢</div>
+            <div class="icon-label">Calculator</div>
+        </div>
+        
+        <div class="desktop-icon" data-window="paint">
+            <div class="icon-img">🎨</div>
+            <div class="icon-label">Paint</div>
+        </div>
+        
+        <div class="desktop-icon" data-window="games">
+            <div class="icon-img">🎮</div>
+            <div class="icon-label">Games</div>
+        </div>
     </div>
 
     <!-- Windows -->
@@ -109,6 +134,330 @@
         </div>
     </div>
 
+    <div class="window" id="browser-window">
+        <div class="window-titlebar">
+            <span class="window-title">Internet Explorer</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="browser-toolbar">
+                <button class="browser-btn" onclick="browserBack()">◀ Back</button>
+                <button class="browser-btn" onclick="browserForward()">Forward ▶</button>
+                <button class="browser-btn" onclick="browserRefresh()">↻ Refresh</button>
+                <button class="browser-btn" onclick="browserHome()">🏠 Home</button>
+                <input type="text" id="browser-url" placeholder="http://" value="http://welcome.linux5.local" />
+                <button class="browser-btn" onclick="browserGo()">Go</button>
+            </div>
+            <div id="browser-content" class="browser-viewport">
+                <h1>Welcome to Linux/5 Browser!</h1>
+                <p>This is a simulated web browser. Try these links:</p>
+                <ul>
+                    <li><a href="#" onclick="browserNavigate('welcome'); return false;">Home</a></li>
+                    <li><a href="#" onclick="browserNavigate('about'); return false;">About Linux/5</a></li>
+                    <li><a href="#" onclick="browserNavigate('help'); return false;">Help & Tips</a></li>
+                    <li><a href="#" onclick="browserNavigate('games'); return false;">Games Portal</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="notepad-window">
+        <div class="window-titlebar">
+            <span class="window-title">Notepad - Untitled</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content notepad-content">
+            <div class="notepad-menu">
+                <button onclick="notepadNew()">New</button>
+                <button onclick="notepadSave()">Save</button>
+                <button onclick="notepadLoad()">Open</button>
+            </div>
+            <textarea id="notepad-textarea" placeholder="Start typing..."></textarea>
+        </div>
+    </div>
+
+    <div class="window" id="calculator-window">
+        <div class="window-titlebar">
+            <span class="window-title">Calculator</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content calculator-content">
+            <div id="calculator-display">0</div>
+            <div class="calculator-buttons">
+                <button onclick="calcClear()">C</button>
+                <button onclick="calcBackspace()">←</button>
+                <button onclick="calcOperation('/')">÷</button>
+                <button onclick="calcOperation('*')">×</button>
+                
+                <button onclick="calcNumber('7')">7</button>
+                <button onclick="calcNumber('8')">8</button>
+                <button onclick="calcNumber('9')">9</button>
+                <button onclick="calcOperation('-')">−</button>
+                
+                <button onclick="calcNumber('4')">4</button>
+                <button onclick="calcNumber('5')">5</button>
+                <button onclick="calcNumber('6')">6</button>
+                <button onclick="calcOperation('+')">+</button>
+                
+                <button onclick="calcNumber('1')">1</button>
+                <button onclick="calcNumber('2')">2</button>
+                <button onclick="calcNumber('3')">3</button>
+                <button onclick="calcEquals()" class="calc-equals">=</button>
+                
+                <button onclick="calcNumber('0')" class="calc-zero">0</button>
+                <button onclick="calcDecimal()">.</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="paint-window">
+        <div class="window-titlebar">
+            <span class="window-title">Paint</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content paint-content">
+            <div class="paint-toolbar">
+                <button onclick="paintSelectTool('pen')" class="active" id="paint-pen">🖊️ Pen</button>
+                <button onclick="paintSelectTool('eraser')" id="paint-eraser">🧹 Eraser</button>
+                <button onclick="paintClear()">🗑️ Clear</button>
+                <input type="color" id="paint-color" value="#000000" onchange="paintChangeColor()" />
+                <input type="range" id="paint-size" min="1" max="20" value="3" />
+            </div>
+            <canvas id="paint-canvas" width="600" height="400"></canvas>
+        </div>
+    </div>
+
+    <div class="window" id="games-window">
+        <div class="window-titlebar">
+            <span class="window-title">Games</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Games</h2>
+            <div class="games-grid">
+                <div class="game-item" onclick="openWindow('minesweeper-window')">
+                    <div class="game-icon">💣</div>
+                    <div class="game-name">Minesweeper</div>
+                </div>
+                <div class="game-item" onclick="openWindow('solitaire-window')">
+                    <div class="game-icon">🃏</div>
+                    <div class="game-name">Solitaire</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="minesweeper-window">
+        <div class="window-titlebar">
+            <span class="window-title">Minesweeper</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content minesweeper-content">
+            <div class="minesweeper-header">
+                <button onclick="minesweeperNew()">New Game</button>
+                <span id="minesweeper-mines">10</span> mines
+                <span id="minesweeper-time">0</span>s
+            </div>
+            <div id="minesweeper-board"></div>
+        </div>
+    </div>
+
+    <div class="window" id="solitaire-window">
+        <div class="window-titlebar">
+            <span class="window-title">Solitaire</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Solitaire</h2>
+            <p>Coming soon! For now, enjoy Minesweeper! 🃏</p>
+            <button onclick="closeWindow(document.getElementById('solitaire-window')); openWindow('minesweeper-window')">Play Minesweeper Instead</button>
+        </div>
+    </div>
+
+    <div class="window" id="settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Control Panel</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Control Panel</h2>
+            <div class="settings-grid">
+                <div class="settings-item">
+                    <div class="settings-icon">🖥️</div>
+                    <div class="settings-name">Display</div>
+                </div>
+                <div class="settings-item">
+                    <div class="settings-icon">🔊</div>
+                    <div class="settings-name">Sound</div>
+                </div>
+                <div class="settings-item">
+                    <div class="settings-icon">🌐</div>
+                    <div class="settings-name">Network</div>
+                </div>
+                <div class="settings-item">
+                    <div class="settings-icon">⚙️</div>
+                    <div class="settings-name">System</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="search-window">
+        <div class="window-titlebar">
+            <span class="window-title">Search Results</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Search</h2>
+            <input type="text" id="search-input" placeholder="Search for files and folders..." style="width: 100%; padding: 5px; margin-bottom: 10px;" />
+            <button onclick="performSearch()">Search</button>
+            <div id="search-results" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <div class="window" id="help-window">
+        <div class="window-titlebar">
+            <span class="window-title">Help and Support</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Help and Support</h2>
+            <p><strong>Welcome to Linux/5!</strong></p>
+            <h3>Getting Started:</h3>
+            <ul>
+                <li>Double-click desktop icons to open programs</li>
+                <li>Drag windows by their title bar</li>
+                <li>Click the cat for fun messages</li>
+                <li>Use the Start menu to access features</li>
+            </ul>
+            <h3>Keyboard Shortcuts:</h3>
+            <ul>
+                <li><kbd>Alt+F4</kbd> - Close active window</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="window" id="run-window">
+        <div class="window-titlebar">
+            <span class="window-title">Run</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <p>Type the name of a program, folder, or document:</p>
+            <input type="text" id="run-input" placeholder="notepad" style="width: 100%; padding: 5px; margin: 10px 0;" />
+            <div style="text-align: right;">
+                <button onclick="runCommand()">OK</button>
+                <button onclick="closeWindow(document.getElementById('run-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="shutdown-window">
+        <div class="window-titlebar">
+            <span class="window-title">Shut Down Computer</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>What do you want the computer to do?</h3>
+            <div class="shutdown-options">
+                <label><input type="radio" name="shutdown" value="shutdown" checked> Shut down</label>
+                <label><input type="radio" name="shutdown" value="restart"> Restart</label>
+                <label><input type="radio" name="shutdown" value="logoff"> Log off</label>
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button onclick="performShutdown()">OK</button>
+                <button onclick="closeWindow(document.getElementById('shutdown-window'))">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="calendar-window">
+        <div class="window-titlebar">
+            <span class="window-title">Date and Time</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Date and Time</h2>
+            <div id="calendar-display"></div>
+        </div>
+    </div>
+
+    <div class="window" id="volume-window">
+        <div class="window-titlebar">
+            <span class="window-title">Volume Control</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h3>Volume</h3>
+            <input type="range" id="volume-slider" min="0" max="100" value="50" style="width: 100%;" oninput="updateVolume()" />
+            <p>Volume: <span id="volume-value">50</span>%</p>
+        </div>
+    </div>
+
+    <div class="window" id="cat-settings-window">
+        <div class="window-titlebar">
+            <span class="window-title">Cat Settings</span>
+            <div class="window-controls">
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2>Cat Assistant Settings</h2>
+            <label><input type="checkbox" id="cat-enabled" checked onchange="toggleCat()"> Enable Cat Assistant</label><br/>
+            <label><input type="checkbox" id="cat-auto-speak" checked> Auto-speak messages</label><br/>
+            <h3>Cat Mood:</h3>
+            <select id="cat-mood">
+                <option value="happy">Happy 😺</option>
+                <option value="playful">Playful 🐱</option>
+                <option value="sleepy">Sleepy 😴</option>
+            </select>
+        </div>
+    </div>
+
     <!-- Black Cat Pet -->
     <div id="cat-pet">
         <div id="cat-body">
@@ -127,6 +476,22 @@
         </div>
     </div>
 
+    <!-- Cat Context Menu -->
+    <div id="cat-context-menu" class="context-menu hidden">
+        <div class="context-menu-item" onclick="showRandomCatMessage()">Make cat speak</div>
+        <div class="context-menu-item" onclick="changeCatMood()">Change mood</div>
+        <div class="context-menu-item" onclick="toggleCat()">Hide cat</div>
+        <div class="context-menu-item" onclick="openWindow('cat-settings-window')">Cat settings</div>
+    </div>
+
+    <!-- Desktop Context Menu -->
+    <div id="desktop-context-menu" class="context-menu hidden">
+        <div class="context-menu-item" onclick="desktopRefresh()">🔄 Refresh</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" onclick="desktopNewFolder()">📁 New Folder</div>
+        <div class="context-menu-item" onclick="desktopProperties()">⚙️ Properties</div>
+    </div>
+
     <!-- Taskbar -->
     <div id="taskbar">
         <button id="start-button">
@@ -136,7 +501,9 @@
         <div id="taskbar-buttons"></div>
         
         <div id="system-tray">
-            <span id="clock">12:00 PM</span>
+            <span class="tray-icon" onclick="openWindow('volume-window')" title="Volume">🔊</span>
+            <span class="tray-icon" onclick="showNetworkStatus()" title="Network">🌐</span>
+            <span id="clock" onclick="openWindow('calendar-window')" title="Click for calendar">12:00 PM</span>
         </div>
     </div>
 
@@ -150,21 +517,30 @@
         </div>
         <div class="start-menu-content">
             <div class="start-menu-section">
-                <div class="start-menu-item">📧 Internet</div>
-                <div class="start-menu-item">🎵 Media Player</div>
-                <div class="start-menu-item">🎮 Games</div>
-                <div class="start-menu-item">📝 Notepad</div>
-                <div class="start-menu-item">🖥️ Command Prompt</div>
+                <div class="start-menu-item" data-window="browser">🌐 Internet Explorer</div>
+                <div class="start-menu-item" data-window="notepad">📝 Notepad</div>
+                <div class="start-menu-item" data-window="calculator">🔢 Calculator</div>
+                <div class="start-menu-item" data-window="paint">🎨 Paint</div>
+                <div class="start-menu-item has-submenu">
+                    📁 Programs ▶
+                    <div class="submenu">
+                        <div class="start-menu-item" data-window="games">🎮 Games</div>
+                        <div class="start-menu-item" data-window="calculator">🔢 Calculator</div>
+                        <div class="start-menu-item" data-window="paint">🎨 Paint</div>
+                    </div>
+                </div>
             </div>
             <div class="start-menu-divider"></div>
             <div class="start-menu-section">
-                <div class="start-menu-item">⚙️ Control Panel</div>
-                <div class="start-menu-item">🔍 Search</div>
-                <div class="start-menu-item">❓ Help and Support</div>
+                <div class="start-menu-item" data-window="mydocuments">📁 My Documents</div>
+                <div class="start-menu-item" data-window="settings">⚙️ Control Panel</div>
+                <div class="start-menu-item" data-window="search">🔍 Search</div>
+                <div class="start-menu-item" data-window="help">❓ Help and Support</div>
+                <div class="start-menu-item" data-window="run">▶️ Run...</div>
             </div>
         </div>
         <div class="start-menu-footer">
-            <div class="start-menu-item">🔌 Turn Off Computer</div>
+            <div class="start-menu-item" data-window="shutdown">🔌 Turn Off Computer</div>
         </div>
     </div>
 
