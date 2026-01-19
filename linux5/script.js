@@ -750,13 +750,29 @@ function loadURLWithProxy(url) {
     const content = document.getElementById('browser-content');
     const loading = document.getElementById('browser-loading');
     
+    // Validate URL
+    try {
+        new URL(url);
+    } catch (e) {
+        content.innerHTML = `
+            <div style="padding: 40px; text-align: center;">
+                <h2 style="color: red;">⚠️ Invalid URL</h2>
+                <p>The URL <strong>${url}</strong> is not valid.</p>
+                <p style="margin-top: 20px;">
+                    <button onclick="browserNavigate('welcome')" class="browser-btn">Go to Home Page</button>
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
     updateBrowserStatus('Loading...');
     loading.classList.remove('hidden');
     
-    // Try AllOrigins proxy first
+    // Use AllOrigins proxy
     const proxyURL = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
     
-    // Clear content and show iframe
+    // Clear content and show loading message
     content.innerHTML = `
         <div style="text-align: center; padding: 40px;">
             <p>Loading ${url}...</p>
@@ -778,6 +794,7 @@ function loadURLWithProxy(url) {
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
             
             content.innerHTML = '';
             content.appendChild(iframe);
@@ -805,6 +822,7 @@ function loadURLWithProxy(url) {
                             <li>The website blocking proxy access (CORS)</li>
                             <li>The website being unavailable</li>
                             <li>Network connectivity issues</li>
+                            <li>The proxy service being temporarily unavailable</li>
                         </ul>
                     </p>
                     <p style="margin-top: 20px;">
@@ -1398,14 +1416,6 @@ function displayCalendar() {
 }
 
 // Update calendar when window opens
-const originalOpenWindow = openWindow;
-window.openWindow = function(windowId) {
-    originalOpenWindow(windowId);
-    if (windowId === 'calendar-window') {
-        displayCalendar();
-    }
-};
-
 // File Manager Functions
 let fileSystem = {};
 let currentPath = 'mycomputer';
@@ -1417,6 +1427,9 @@ let fmClipboardAction = null; // 'copy' or 'cut'
 let selectedFMItems = [];
 
 function initializeFileSystem() {
+document.addEventListener('DOMContentLoaded', () => {
+    initializeFileSystem();
+});
     const saved = localStorage.getItem('linux5FileSystem');
     if (saved) {
         fileSystem = JSON.parse(saved);
@@ -1614,9 +1627,7 @@ function fmOpenItem(key) {
     if (!item) return;
     
     if (item.type === 'folder' || item.type === 'drive') {
-        // Navigate into folder
-        const newPath = currentPath + '_' + key;
-        // For simplicity, we'll just show a message
+        // Navigate into folder - not yet fully implemented
         showCatMessage(`Opening ${item.name}... (Sub-navigation not yet implemented)`);
     } else if (item.type === 'file') {
         const ext = item.name.split('.').pop().toLowerCase();
@@ -1676,6 +1687,11 @@ function fmRename() {
     
     const newName = prompt('Enter new name:', item.name);
     if (newName && newName !== item.name) {
+        // Check if item with new name already exists
+        if (folder.children[newName]) {
+            showCatMessage(`An item named "${newName}" already exists! 😿`);
+            return;
+        }
         item.name = newName;
         delete folder.children[key];
         folder.children[newName] = item;
