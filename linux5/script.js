@@ -236,18 +236,19 @@ function openWindow(windowId) {
         // Define window sizes based on type
         const windowSizes = {
             'browser-window': { width: 1024, height: 768 },
-            'minesweeper-window': { width: 600, height: 500 },
+            'minesweeper-window': { width: 400, height: 500 },
             'solitaire-window': { width: 900, height: 700 },
-            'tetris-window': { width: 400, height: 600 },
-            'snake-window': { width: 500, height: 550 },
+            'tetris-window': { width: 550, height: 700 },
+            'snake-window': { width: 500, height: 600 },
             'notepad-window': { width: 600, height: 500 },
-            'calculator-window': { width: 300, height: 400 },
-            'paint-window': { width: 900, height: 700 },
+            'calculator-window': { width: 300, height: 450 },
+            'paint-window': { width: 900, height: 750 },
             'filemanager-window': { width: 800, height: 600 },
-            'settings-window': { width: 500, height: 550 },
-            'games-window': { width: 900, height: 700 },
-            'pinball-window': { width: 500, height: 700 },
-            'tictactoe-window': { width: 400, height: 550 },
+            'settings-window': { width: 600, height: 650 },
+            'display-settings-window': { width: 500, height: 650 },
+            'games-window': { width: 600, height: 500 },
+            'pinball-window': { width: 500, height: 750 },
+            'tictactoe-window': { width: 450, height: 600 },
             'help-window': { width: 600, height: 500 },
             'about-window': { width: 500, height: 400 }
         };
