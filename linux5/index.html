@@ -79,17 +79,17 @@ Secondary Slave: None
     <!-- Desktop Area -->
     <div id="desktop">
         <!-- Desktop Icons -->
-        <div class="desktop-icon" data-window="mycomputer">
+        <div class="desktop-icon" data-window="filemanager">
             <div class="icon-img">💻</div>
             <div class="icon-label">My Computer</div>
         </div>
         
-        <div class="desktop-icon" data-window="mydocuments">
+        <div class="desktop-icon" data-window="filemanager" data-path="mydocuments">
             <div class="icon-img">📁</div>
             <div class="icon-label">My Documents</div>
         </div>
         
-        <div class="desktop-icon" data-window="recycle">
+        <div class="desktop-icon" data-window="filemanager" data-path="recycle">
             <div class="icon-img">🗑️</div>
             <div class="icon-label">Recycle Bin</div>
         </div>
@@ -212,24 +212,107 @@ Secondary Slave: None
                 <button class="window-btn close">✕</button>
             </div>
         </div>
-        <div class="window-content">
+        <div class="window-content browser-window-content">
+            <div class="browser-menubar">
+                <div class="menu-item">File</div>
+                <div class="menu-item">Edit</div>
+                <div class="menu-item">View</div>
+                <div class="menu-item" onclick="toggleFavoritesMenu(event)">
+                    Favorites
+                    <div class="browser-favorites-menu hidden" id="favorites-menu"></div>
+                </div>
+                <div class="menu-item">Tools</div>
+                <div class="menu-item">Help</div>
+            </div>
             <div class="browser-toolbar">
-                <button class="browser-btn" onclick="browserBack()">◀ Back</button>
-                <button class="browser-btn" onclick="browserForward()">Forward ▶</button>
-                <button class="browser-btn" onclick="browserRefresh()">↻ Refresh</button>
-                <button class="browser-btn" onclick="browserHome()">🏠 Home</button>
-                <input type="text" id="browser-url" placeholder="http://" value="http://welcome.linux5.local" />
-                <button class="browser-btn" onclick="browserGo()">Go</button>
+                <button class="browser-btn" onclick="browserBack()" title="Back">◀</button>
+                <button class="browser-btn" onclick="browserForward()" title="Forward">▶</button>
+                <button class="browser-btn" onclick="browserStop()" title="Stop">✕</button>
+                <button class="browser-btn" onclick="browserRefresh()" title="Refresh">↻</button>
+                <button class="browser-btn" onclick="browserHome()" title="Home">🏠</button>
+                <div class="browser-address-bar">
+                    <span class="address-label">Address</span>
+                    <input type="text" id="browser-url" placeholder="http://" value="http://welcome.linux5.local" onkeypress="if(event.key==='Enter') browserGo()" />
+                </div>
+                <button class="browser-btn" onclick="browserGo()" title="Go">Go</button>
+                <button class="browser-btn" onclick="addToFavorites()" title="Add to Favorites">⭐</button>
+            </div>
+            <div id="browser-loading" class="browser-loading hidden">
+                <div class="loading-bar"></div>
             </div>
             <div id="browser-content" class="browser-viewport">
-                <h1>Welcome to Linux/5 Browser!</h1>
-                <p>This is a simulated web browser. Try these links:</p>
+                <h1>Welcome to Internet Explorer!</h1>
+                <p>Enter a URL in the address bar to browse the web, or try these bookmarks:</p>
                 <ul>
-                    <li><a href="#" onclick="browserNavigate('welcome'); return false;">Home</a></li>
-                    <li><a href="#" onclick="browserNavigate('about'); return false;">About Linux/5</a></li>
-                    <li><a href="#" onclick="browserNavigate('help'); return false;">Help & Tips</a></li>
-                    <li><a href="#" onclick="browserNavigate('games'); return false;">Games Portal</a></li>
+                    <li><a href="#" onclick="browserLoadURL('https://example.com'); return false;">Example.com</a></li>
+                    <li><a href="#" onclick="browserLoadURL('https://www.google.com'); return false;">Google</a></li>
+                    <li><a href="#" onclick="browserLoadURL('https://www.wikipedia.org'); return false;">Wikipedia</a></li>
                 </ul>
+                <p style="margin-top: 20px; font-size: 12px; color: #666;">
+                    <strong>Note:</strong> This browser uses a web proxy to load real websites. Some sites may not load properly due to CORS restrictions.
+                </p>
+            </div>
+            <div class="browser-statusbar">
+                <span id="browser-status">Done</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="filemanager-window">
+        <div class="window-titlebar">
+            <span class="window-title">My Computer</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content filemanager-content">
+            <div class="filemanager-menubar">
+                <div class="menu-item">File</div>
+                <div class="menu-item">Edit</div>
+                <div class="menu-item">View</div>
+                <div class="menu-item">Favorites</div>
+                <div class="menu-item">Tools</div>
+                <div class="menu-item">Help</div>
+            </div>
+            <div class="filemanager-toolbar">
+                <button class="fm-btn" onclick="fmBack()" title="Back">◀</button>
+                <button class="fm-btn" onclick="fmForward()" title="Forward">▶</button>
+                <button class="fm-btn" onclick="fmUp()" title="Up">⬆️</button>
+                <button class="fm-btn" onclick="fmSearch()" title="Search">🔍</button>
+                <button class="fm-btn" onclick="fmToggleFolders()" title="Folders">📁</button>
+                <button class="fm-btn" onclick="fmChangeView()" title="Views">👁️</button>
+                <div class="filemanager-address-bar">
+                    <span class="address-label">Address</span>
+                    <input type="text" id="fm-address" readonly value="My Computer" />
+                </div>
+                <button class="fm-btn" onclick="fmGo()" title="Go">Go</button>
+            </div>
+            <div class="filemanager-main">
+                <div class="filemanager-sidebar" id="fm-sidebar">
+                    <div class="fm-tree-item" onclick="fmNavigate('desktop')">
+                        <span class="fm-icon">🖥️</span> Desktop
+                    </div>
+                    <div class="fm-tree-item" onclick="fmNavigate('mydocuments')">
+                        <span class="fm-icon">📁</span> My Documents
+                    </div>
+                    <div class="fm-tree-item" onclick="fmNavigate('mycomputer')">
+                        <span class="fm-icon">💻</span> My Computer
+                    </div>
+                    <div class="fm-tree-item" onclick="fmNavigate('mynetwork')">
+                        <span class="fm-icon">🌐</span> My Network Places
+                    </div>
+                    <div class="fm-tree-item" onclick="fmNavigate('recycle')">
+                        <span class="fm-icon">🗑️</span> Recycle Bin
+                    </div>
+                </div>
+                <div class="filemanager-content-area" id="fm-content">
+                    <!-- File manager content will be rendered here -->
+                </div>
+            </div>
+            <div class="filemanager-statusbar">
+                <span id="fm-status">My Computer</span>
             </div>
         </div>
     </div>
@@ -561,6 +644,19 @@ Secondary Slave: None
         <div class="context-menu-item" onclick="desktopProperties()">⚙️ Properties</div>
     </div>
 
+    <!-- File Manager Context Menu -->
+    <div id="fm-context-menu" class="fm-context-menu hidden">
+        <div class="fm-context-menu-item" onclick="fmCreateFolder()">📁 New Folder</div>
+        <div class="fm-context-menu-item" onclick="fmCreateFile()">📄 New File</div>
+        <div class="fm-context-menu-divider"></div>
+        <div class="fm-context-menu-item" onclick="fmRename()">✏️ Rename</div>
+        <div class="fm-context-menu-item" onclick="fmDelete()">🗑️ Delete</div>
+        <div class="fm-context-menu-divider"></div>
+        <div class="fm-context-menu-item" onclick="fmCopy()">📋 Copy</div>
+        <div class="fm-context-menu-item" onclick="fmCut()">✂️ Cut</div>
+        <div class="fm-context-menu-item" onclick="fmPaste()">📌 Paste</div>
+    </div>
+
     <!-- Taskbar -->
     <div id="taskbar">
         <button id="start-button">
@@ -602,6 +698,7 @@ Secondary Slave: None
             <div class="start-menu-divider"></div>
             <div class="start-menu-section">
                 <div class="start-menu-item" data-window="mydocuments">📁 My Documents</div>
+                <div class="start-menu-item" data-window="filemanager">💻 My Computer</div>
                 <div class="start-menu-item" data-window="settings">⚙️ Control Panel</div>
                 <div class="start-menu-item" data-window="search">🔍 Search</div>
                 <div class="start-menu-item" data-window="help">❓ Help and Support</div>

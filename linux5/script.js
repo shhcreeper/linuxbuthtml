@@ -241,6 +241,13 @@ function openWindow(windowId) {
     
     bringToFront(window);
     updateTaskbar();
+    
+    // Initialize specific windows
+    if (windowId === 'filemanager-window') {
+        renderFileManager();
+    } else if (windowId === 'calendar-window') {
+        displayCalendar();
+    }
 }
 
 function closeWindow(window) {
@@ -288,7 +295,18 @@ function initializeDesktopIcons() {
     icons.forEach(icon => {
         icon.addEventListener('dblclick', () => {
             const windowId = icon.dataset.window + '-window';
-            openWindow(windowId);
+            const path = icon.dataset.path;
+            
+            if (windowId === 'filemanager-window') {
+                openWindow(windowId);
+                if (path) {
+                    fmNavigate(path);
+                } else {
+                    fmNavigate('mycomputer');
+                }
+            } else {
+                openWindow(windowId);
+            }
         });
         
         icon.addEventListener('mousedown', (e) => {
@@ -489,7 +507,15 @@ document.addEventListener('DOMContentLoaded', () => {
         item.addEventListener('click', () => {
             const windowId = item.dataset.window;
             if (windowId) {
-                openWindow(windowId + '-window');
+                if (windowId === 'mydocuments') {
+                    openWindow('filemanager-window');
+                    fmNavigate('mydocuments');
+                } else if (windowId === 'filemanager') {
+                    openWindow('filemanager-window');
+                    fmNavigate('mycomputer');
+                } else {
+                    openWindow(windowId + '-window');
+                }
                 toggleStartMenu();
             }
         });
@@ -500,6 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const catContextMenu = document.getElementById('cat-context-menu');
     const desktop = document.getElementById('desktop');
     const desktopContextMenu = document.getElementById('desktop-context-menu');
+    const fmContextMenu = document.getElementById('fm-context-menu');
     
     catPet.addEventListener('contextmenu', (e) => {
         e.preventDefault();
@@ -513,9 +540,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // File manager context menu
+    document.addEventListener('contextmenu', (e) => {
+        if (e.target.closest('#fm-content')) {
+            e.preventDefault();
+            showContextMenu(fmContextMenu, e.clientX, e.clientY);
+        }
+    });
+    
     document.addEventListener('click', () => {
         catContextMenu.classList.add('hidden');
         desktopContextMenu.classList.add('hidden');
+        fmContextMenu.classList.add('hidden');
+        const favMenu = document.getElementById('favorites-menu');
+        if (favMenu) favMenu.classList.add('hidden');
     });
     
     // Keyboard shortcuts
@@ -546,15 +584,19 @@ function showContextMenu(menu, x, y) {
 // Browser Functions
 let browserHistory = [];
 let browserHistoryIndex = -1;
+let browserFavorites = [];
+let currentBrowserURL = '';
 let browserPages = {
-    welcome: `<h1>Welcome to Linux/5 Browser!</h1>
-        <p>This is a simulated web browser. Try these links:</p>
+    welcome: `<h1>Welcome to Internet Explorer!</h1>
+        <p>Enter a URL in the address bar to browse the web, or try these bookmarks:</p>
         <ul>
-            <li><a href="#" onclick="browserNavigate('welcome'); return false;">Home</a></li>
-            <li><a href="#" onclick="browserNavigate('about'); return false;">About Linux/5</a></li>
-            <li><a href="#" onclick="browserNavigate('help'); return false;">Help & Tips</a></li>
-            <li><a href="#" onclick="browserNavigate('games'); return false;">Games Portal</a></li>
-        </ul>`,
+            <li><a href="#" onclick="browserLoadURL('https://example.com'); return false;">Example.com</a></li>
+            <li><a href="#" onclick="browserLoadURL('https://www.google.com'); return false;">Google</a></li>
+            <li><a href="#" onclick="browserLoadURL('https://www.wikipedia.org'); return false;">Wikipedia</a></li>
+        </ul>
+        <p style="margin-top: 20px; font-size: 12px; color: #666;">
+            <strong>Note:</strong> This browser uses a web proxy to load real websites. Some sites may not load properly due to CORS restrictions.
+        </p>`,
     about: `<h1>About Linux/5</h1>
         <p>Linux/5 is a nostalgic recreation of a Windows XP-style desktop experience.</p>
         <p>Built with pure HTML, CSS, and JavaScript!</p>
@@ -577,7 +619,85 @@ let browserPages = {
 };
 
 function initializeBrowser() {
+    // Load favorites from localStorage
+    const savedFavorites = localStorage.getItem('browserFavorites');
+    if (savedFavorites) {
+        browserFavorites = JSON.parse(savedFavorites);
+    } else {
+        // Default favorites
+        browserFavorites = [
+            { name: 'Google', url: 'https://www.google.com' },
+            { name: 'Wikipedia', url: 'https://www.wikipedia.org' },
+            { name: 'GitHub', url: 'https://github.com' },
+            { name: 'Example.com', url: 'https://example.com' }
+        ];
+        saveFavorites();
+    }
+    
     browserNavigate('welcome');
+    updateFavoritesMenu();
+}
+
+function saveFavorites() {
+    localStorage.setItem('browserFavorites', JSON.stringify(browserFavorites));
+    updateFavoritesMenu();
+}
+
+function updateFavoritesMenu() {
+    const menu = document.getElementById('favorites-menu');
+    if (!menu) return;
+    
+    menu.innerHTML = '';
+    
+    browserFavorites.forEach((fav, index) => {
+        const item = document.createElement('div');
+        item.className = 'fav-item';
+        item.innerHTML = `<span>⭐</span><span>${fav.name}</span>`;
+        item.onclick = (e) => {
+            e.stopPropagation();
+            browserLoadURL(fav.url);
+            menu.classList.add('hidden');
+        };
+        menu.appendChild(item);
+    });
+    
+    if (browserFavorites.length > 0) {
+        const divider = document.createElement('div');
+        divider.style.height = '1px';
+        divider.style.background = '#ccc';
+        divider.style.margin = '3px 0';
+        menu.appendChild(divider);
+    }
+    
+    const addItem = document.createElement('div');
+    addItem.className = 'fav-item';
+    addItem.innerHTML = `<span>➕</span><span>Add Current Page...</span>`;
+    addItem.onclick = (e) => {
+        e.stopPropagation();
+        addToFavorites();
+        menu.classList.add('hidden');
+    };
+    menu.appendChild(addItem);
+}
+
+function toggleFavoritesMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('favorites-menu');
+    menu.classList.toggle('hidden');
+}
+
+function addToFavorites() {
+    if (!currentBrowserURL || currentBrowserURL.includes('.linux5.local')) {
+        showCatMessage("Can't bookmark local pages! 😸");
+        return;
+    }
+    
+    const name = prompt('Enter bookmark name:', currentBrowserURL);
+    if (name) {
+        browserFavorites.push({ name, url: currentBrowserURL });
+        saveFavorites();
+        showCatMessage(`Added "${name}" to favorites! ⭐`);
+    }
 }
 
 function browserNavigate(page) {
@@ -586,46 +706,185 @@ function browserNavigate(page) {
     
     if (browserPages[page]) {
         content.innerHTML = browserPages[page];
-        urlBar.value = 'http://' + page + '.linux5.local';
-        browserHistory.push(page);
+        currentBrowserURL = 'http://' + page + '.linux5.local';
+        urlBar.value = currentBrowserURL;
+        browserHistory.push({ type: 'local', page });
         browserHistoryIndex = browserHistory.length - 1;
+        updateBrowserStatus('Done');
     }
+}
+
+function browserLoadURL(url) {
+    const urlBar = document.getElementById('browser-url');
+    urlBar.value = url;
+    browserGo();
+}
+
+function browserGo() {
+    const urlBar = document.getElementById('browser-url');
+    let url = urlBar.value.trim();
+    
+    if (!url) return;
+    
+    // Check if it's a local page
+    if (url.includes('.linux5.local')) {
+        const page = url.replace('http://', '').replace('.linux5.local', '');
+        if (browserPages[page]) {
+            browserNavigate(page);
+            return;
+        }
+    }
+    
+    // Add protocol if missing
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+    }
+    
+    currentBrowserURL = url;
+    
+    // Use proxy to load the URL
+    loadURLWithProxy(url);
+}
+
+function loadURLWithProxy(url) {
+    const content = document.getElementById('browser-content');
+    const loading = document.getElementById('browser-loading');
+    
+    // Validate URL
+    try {
+        new URL(url);
+    } catch (e) {
+        content.innerHTML = `
+            <div style="padding: 40px; text-align: center;">
+                <h2 style="color: red;">⚠️ Invalid URL</h2>
+                <p>The URL <strong>${url}</strong> is not valid.</p>
+                <p style="margin-top: 20px;">
+                    <button onclick="browserNavigate('welcome')" class="browser-btn">Go to Home Page</button>
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
+    updateBrowserStatus('Loading...');
+    loading.classList.remove('hidden');
+    
+    // Use AllOrigins proxy
+    const proxyURL = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    
+    // Clear content and show loading message
+    content.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <p>Loading ${url}...</p>
+            <p style="font-size: 12px; color: #666;">Using web proxy to fetch content...</p>
+        </div>
+    `;
+    
+    fetch(proxyURL)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load');
+            return response.text();
+        })
+        .then(html => {
+            loading.classList.add('hidden');
+            updateBrowserStatus('Done');
+            
+            // Create iframe to display content
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+            
+            content.innerHTML = '';
+            content.appendChild(iframe);
+            
+            // Write HTML to iframe
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(html);
+            iframeDoc.close();
+            
+            // Add to history
+            browserHistory.push({ type: 'url', url: currentBrowserURL });
+            browserHistoryIndex = browserHistory.length - 1;
+        })
+        .catch(error => {
+            loading.classList.add('hidden');
+            updateBrowserStatus('Error');
+            content.innerHTML = `
+                <div style="padding: 40px; text-align: center;">
+                    <h2 style="color: red;">⚠️ Cannot Display Page</h2>
+                    <p>The page at <strong>${url}</strong> could not be loaded.</p>
+                    <p style="font-size: 12px; color: #666;">
+                        This could be due to:
+                        <ul style="text-align: left; display: inline-block; margin-top: 10px;">
+                            <li>The website blocking proxy access (CORS)</li>
+                            <li>The website being unavailable</li>
+                            <li>Network connectivity issues</li>
+                            <li>The proxy service being temporarily unavailable</li>
+                        </ul>
+                    </p>
+                    <p style="margin-top: 20px;">
+                        <button onclick="browserNavigate('welcome')" class="browser-btn">Go to Home Page</button>
+                    </p>
+                </div>
+            `;
+            showCatMessage("Oops! Couldn't load that website. Some sites block proxy access. 😿");
+        });
+}
+
+function updateBrowserStatus(text) {
+    const status = document.getElementById('browser-status');
+    if (status) status.textContent = text;
 }
 
 function browserBack() {
     if (browserHistoryIndex > 0) {
         browserHistoryIndex--;
-        const page = browserHistory[browserHistoryIndex];
-        const content = document.getElementById('browser-content');
-        const urlBar = document.getElementById('browser-url');
-        content.innerHTML = browserPages[page];
-        urlBar.value = 'http://' + page + '.linux5.local';
+        const item = browserHistory[browserHistoryIndex];
+        
+        if (item.type === 'local') {
+            browserNavigate(item.page);
+        } else {
+            loadURLWithProxy(item.url);
+        }
     }
 }
 
 function browserForward() {
     if (browserHistoryIndex < browserHistory.length - 1) {
         browserHistoryIndex++;
-        const page = browserHistory[browserHistoryIndex];
-        const content = document.getElementById('browser-content');
-        const urlBar = document.getElementById('browser-url');
-        content.innerHTML = browserPages[page];
-        urlBar.value = 'http://' + page + '.linux5.local';
+        const item = browserHistory[browserHistoryIndex];
+        
+        if (item.type === 'local') {
+            browserNavigate(item.page);
+        } else {
+            loadURLWithProxy(item.url);
+        }
     }
 }
 
 function browserRefresh() {
-    const page = browserHistory[browserHistoryIndex];
-    const content = document.getElementById('browser-content');
-    content.innerHTML = browserPages[page];
+    if (browserHistoryIndex >= 0) {
+        const item = browserHistory[browserHistoryIndex];
+        
+        if (item.type === 'local') {
+            browserNavigate(item.page);
+        } else {
+            loadURLWithProxy(item.url);
+        }
+    }
+}
+
+function browserStop() {
+    const loading = document.getElementById('browser-loading');
+    loading.classList.add('hidden');
+    updateBrowserStatus('Stopped');
 }
 
 function browserHome() {
     browserNavigate('welcome');
-}
-
-function browserGo() {
-    showCatMessage("That's not a real website, silly! Try the links on the home page! 😸");
 }
 
 // Notepad Functions
@@ -1157,10 +1416,382 @@ function displayCalendar() {
 }
 
 // Update calendar when window opens
-const originalOpenWindow = openWindow;
-window.openWindow = function(windowId) {
-    originalOpenWindow(windowId);
-    if (windowId === 'calendar-window') {
-        displayCalendar();
+// File Manager Functions
+let fileSystem = {};
+let currentPath = 'mycomputer';
+let fmHistory = [];
+let fmHistoryIndex = -1;
+let fmViewMode = 'icons'; // icons, list, details
+let fmClipboard = null;
+let fmClipboardAction = null; // 'copy' or 'cut'
+let selectedFMItems = [];
+
+function initializeFileSystem() {
+document.addEventListener('DOMContentLoaded', () => {
+    initializeFileSystem();
+});
+    const saved = localStorage.getItem('linux5FileSystem');
+    if (saved) {
+        fileSystem = JSON.parse(saved);
+    } else {
+        // Create default file system
+        fileSystem = {
+            desktop: {
+                type: 'folder',
+                name: 'Desktop',
+                children: {}
+            },
+            mydocuments: {
+                type: 'folder',
+                name: 'My Documents',
+                children: {
+                    'My Pictures': { type: 'folder', name: 'My Pictures', children: {} },
+                    'My Music': { type: 'folder', name: 'My Music', children: {} },
+                    'My Videos': { type: 'folder', name: 'My Videos', children: {} }
+                }
+            },
+            downloads: {
+                type: 'folder',
+                name: 'Downloads',
+                children: {}
+            },
+            mycomputer: {
+                type: 'folder',
+                name: 'My Computer',
+                children: {
+                    'Local Disk (C:)': { type: 'drive', name: 'Local Disk (C:)', children: {} },
+                    'CD Drive (D:)': { type: 'drive', name: 'CD Drive (D:)', children: {} }
+                }
+            },
+            mynetwork: {
+                type: 'folder',
+                name: 'My Network Places',
+                children: {}
+            },
+            recycle: {
+                type: 'folder',
+                name: 'Recycle Bin',
+                children: {}
+            }
+        };
+        saveFileSystem();
     }
-};
+}
+
+function saveFileSystem() {
+    localStorage.setItem('linux5FileSystem', JSON.stringify(fileSystem));
+}
+
+function fmNavigate(path) {
+    currentPath = path;
+    fmHistory.push(path);
+    fmHistoryIndex = fmHistory.length - 1;
+    renderFileManager();
+}
+
+function fmBack() {
+    if (fmHistoryIndex > 0) {
+        fmHistoryIndex--;
+        currentPath = fmHistory[fmHistoryIndex];
+        renderFileManager();
+    }
+}
+
+function fmForward() {
+    if (fmHistoryIndex < fmHistory.length - 1) {
+        fmHistoryIndex++;
+        currentPath = fmHistory[fmHistoryIndex];
+        renderFileManager();
+    }
+}
+
+function fmUp() {
+    // Navigate to parent folder
+    if (currentPath !== 'mycomputer') {
+        fmNavigate('mycomputer');
+    }
+}
+
+function fmSearch() {
+    showCatMessage("File search coming soon! 🔍");
+}
+
+function fmToggleFolders() {
+    const sidebar = document.getElementById('fm-sidebar');
+    sidebar.classList.toggle('hidden');
+}
+
+function fmChangeView() {
+    const modes = ['icons', 'list', 'details'];
+    const currentIndex = modes.indexOf(fmViewMode);
+    fmViewMode = modes[(currentIndex + 1) % modes.length];
+    renderFileManager();
+}
+
+function fmGo() {
+    renderFileManager();
+}
+
+function renderFileManager() {
+    const content = document.getElementById('fm-content');
+    const address = document.getElementById('fm-address');
+    const status = document.getElementById('fm-status');
+    const title = document.querySelector('#filemanager-window .window-title');
+    
+    if (!content) return;
+    
+    const folder = fileSystem[currentPath];
+    if (!folder) {
+        content.innerHTML = '<p>Folder not found.</p>';
+        return;
+    }
+    
+    // Update UI
+    title.textContent = folder.name;
+    address.value = folder.name;
+    
+    // Render items
+    let html = '';
+    
+    if (fmViewMode === 'details') {
+        html = '<div class="fm-items-container details-view">';
+        html += '<div class="details-view-header">';
+        html += '<div>Name</div><div>Size</div><div>Type</div><div>Date Modified</div>';
+        html += '</div>';
+    } else {
+        html = `<div class="fm-items-container ${fmViewMode}-view">`;
+    }
+    
+    const items = folder.children || {};
+    const itemCount = Object.keys(items).length;
+    
+    if (itemCount === 0) {
+        html += '<p style="padding: 20px; color: #666;">This folder is empty.</p>';
+    } else {
+        Object.keys(items).forEach(key => {
+            const item = items[key];
+            const icon = getFileIcon(item);
+            
+            if (fmViewMode === 'details') {
+                html += `<div class="fm-item" onclick="fmSelectItem('${key}')" ondblclick="fmOpenItem('${key}')">`;
+                html += `<div><span class="fm-item-icon">${icon}</span> ${item.name}</div>`;
+                html += `<div>${item.size || '-'}</div>`;
+                html += `<div>${item.type === 'folder' ? 'Folder' : 'File'}</div>`;
+                html += `<div>${item.modified || new Date().toLocaleDateString()}</div>`;
+                html += '</div>';
+            } else {
+                html += `<div class="fm-item" onclick="fmSelectItem('${key}')" ondblclick="fmOpenItem('${key}')">`;
+                html += `<div class="fm-item-icon">${icon}</div>`;
+                html += `<div class="fm-item-name">${item.name}</div>`;
+                html += '</div>';
+            }
+        });
+    }
+    
+    html += '</div>';
+    content.innerHTML = html;
+    
+    // Update status
+    status.textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
+    
+    // Update sidebar selection
+    document.querySelectorAll('.fm-tree-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+}
+
+function getFileIcon(item) {
+    if (item.type === 'folder') return '📁';
+    if (item.type === 'drive') return '💾';
+    if (item.type === 'file') {
+        const ext = item.name.split('.').pop().toLowerCase();
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) return '🖼️';
+        if (['txt', 'doc', 'docx'].includes(ext)) return '📄';
+        if (['mp3', 'wav', 'ogg'].includes(ext)) return '🎵';
+        if (['mp4', 'avi', 'mkv'].includes(ext)) return '🎬';
+        if (['zip', 'rar', '7z'].includes(ext)) return '📦';
+        if (['exe', 'msi'].includes(ext)) return '⚙️';
+        return '📄';
+    }
+    return '📄';
+}
+
+function fmSelectItem(key) {
+    selectedFMItems = [key];
+}
+
+function fmOpenItem(key) {
+    const folder = fileSystem[currentPath];
+    const item = folder.children[key];
+    
+    if (!item) return;
+    
+    if (item.type === 'folder' || item.type === 'drive') {
+        // Navigate into folder - not yet fully implemented
+        showCatMessage(`Opening ${item.name}... (Sub-navigation not yet implemented)`);
+    } else if (item.type === 'file') {
+        const ext = item.name.split('.').pop().toLowerCase();
+        if (['txt', 'doc', 'docx'].includes(ext)) {
+            // Open in notepad
+            openWindow('notepad-window');
+            showCatMessage(`Opening ${item.name} in Notepad...`);
+        } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext)) {
+            showCatMessage(`Opening ${item.name}... (Image viewer not yet implemented)`);
+        } else {
+            showCatMessage(`Can't open ${item.name} - no associated program!`);
+        }
+    }
+}
+
+function fmCreateFolder() {
+    const name = prompt('Enter folder name:');
+    if (name) {
+        const folder = fileSystem[currentPath];
+        folder.children[name] = {
+            type: 'folder',
+            name: name,
+            children: {},
+            modified: new Date().toLocaleDateString()
+        };
+        saveFileSystem();
+        renderFileManager();
+        showCatMessage(`Folder "${name}" created! 📁`);
+    }
+}
+
+function fmCreateFile() {
+    const name = prompt('Enter file name (with extension):');
+    if (name) {
+        const folder = fileSystem[currentPath];
+        folder.children[name] = {
+            type: 'file',
+            name: name,
+            size: '0 KB',
+            modified: new Date().toLocaleDateString()
+        };
+        saveFileSystem();
+        renderFileManager();
+        showCatMessage(`File "${name}" created! 📄`);
+    }
+}
+
+function fmRename() {
+    if (selectedFMItems.length === 0) {
+        showCatMessage("Please select an item to rename! 😺");
+        return;
+    }
+    
+    const key = selectedFMItems[0];
+    const folder = fileSystem[currentPath];
+    const item = folder.children[key];
+    
+    const newName = prompt('Enter new name:', item.name);
+    if (newName && newName !== item.name) {
+        // Check if item with new name already exists
+        if (folder.children[newName]) {
+            showCatMessage(`An item named "${newName}" already exists! 😿`);
+            return;
+        }
+        item.name = newName;
+        delete folder.children[key];
+        folder.children[newName] = item;
+        saveFileSystem();
+        renderFileManager();
+        showCatMessage(`Renamed to "${newName}"! ✏️`);
+    }
+}
+
+function fmDelete() {
+    if (selectedFMItems.length === 0) {
+        showCatMessage("Please select an item to delete! 😺");
+        return;
+    }
+    
+    const key = selectedFMItems[0];
+    const folder = fileSystem[currentPath];
+    const item = folder.children[key];
+    
+    if (confirm(`Move "${item.name}" to Recycle Bin?`)) {
+        // Move to recycle bin
+        fileSystem.recycle.children[key] = item;
+        delete folder.children[key];
+        saveFileSystem();
+        renderFileManager();
+        showCatMessage(`"${item.name}" moved to Recycle Bin! 🗑️`);
+    }
+}
+
+function fmCopy() {
+    if (selectedFMItems.length === 0) {
+        showCatMessage("Please select an item to copy! 😺");
+        return;
+    }
+    
+    fmClipboard = selectedFMItems[0];
+    fmClipboardAction = 'copy';
+    showCatMessage("Item copied to clipboard! 📋");
+}
+
+function fmCut() {
+    if (selectedFMItems.length === 0) {
+        showCatMessage("Please select an item to cut! 😺");
+        return;
+    }
+    
+    fmClipboard = selectedFMItems[0];
+    fmClipboardAction = 'cut';
+    showCatMessage("Item cut to clipboard! ✂️");
+}
+
+function fmPaste() {
+    if (!fmClipboard) {
+        showCatMessage("Nothing to paste! 😺");
+        return;
+    }
+    
+    const sourceFolder = getCurrentFolderForItem(fmClipboard);
+    if (!sourceFolder) return;
+    
+    const item = sourceFolder.children[fmClipboard];
+    const targetFolder = fileSystem[currentPath];
+    
+    if (fmClipboardAction === 'copy') {
+        // Copy item
+        targetFolder.children[fmClipboard] = JSON.parse(JSON.stringify(item));
+    } else if (fmClipboardAction === 'cut') {
+        // Move item
+        targetFolder.children[fmClipboard] = item;
+        delete sourceFolder.children[fmClipboard];
+        fmClipboard = null;
+        fmClipboardAction = null;
+    }
+    
+    saveFileSystem();
+    renderFileManager();
+    showCatMessage("Item pasted! 📌");
+}
+
+function getCurrentFolderForItem(key) {
+    // Search for the folder containing this item
+    for (const path in fileSystem) {
+        const folder = fileSystem[path];
+        if (folder.children && folder.children[key]) {
+            return folder;
+        }
+    }
+    return null;
+}
+
+function fmEmptyRecycleBin() {
+    if (confirm('Empty the Recycle Bin?')) {
+        fileSystem.recycle.children = {};
+        saveFileSystem();
+        renderFileManager();
+        showCatMessage("Recycle Bin emptied! 🗑️");
+    }
+}
+
+// Initialize file system on page load
+document.addEventListener('DOMContentLoaded', () => {
+    initializeFileSystem();
+});
