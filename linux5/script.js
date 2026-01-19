@@ -1507,7 +1507,7 @@ function displayCalendar() {
 // Update calendar when window opens
 // File Manager Functions
 let fileSystem = {};
-let currentPath = 'mycomputer';
+let currentPath = ['mycomputer']; // Array representing path hierarchy
 let fmHistory = [];
 let fmHistoryIndex = -1;
 let fmViewMode = 'icons'; // icons, list, details
@@ -1516,14 +1516,11 @@ let fmClipboardAction = null; // 'copy' or 'cut'
 let selectedFMItems = [];
 
 function initializeFileSystem() {
-document.addEventListener('DOMContentLoaded', () => {
-    initializeFileSystem();
-});
     const saved = localStorage.getItem('linux5FileSystem');
     if (saved) {
         fileSystem = JSON.parse(saved);
     } else {
-        // Create default file system
+        // Create default file system with nested structure
         fileSystem = {
             desktop: {
                 type: 'folder',
@@ -1536,7 +1533,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 children: {
                     'My Pictures': { type: 'folder', name: 'My Pictures', children: {} },
                     'My Music': { type: 'folder', name: 'My Music', children: {} },
-                    'My Videos': { type: 'folder', name: 'My Videos', children: {} }
+                    'My Videos': { type: 'folder', name: 'My Videos', children: {} },
+                    'Work': { 
+                        type: 'folder', 
+                        name: 'Work', 
+                        children: {
+                            'Reports': { type: 'folder', name: 'Reports', children: {} },
+                            'Presentations': { type: 'folder', name: 'Presentations', children: {} }
+                        }
+                    }
                 }
             },
             downloads: {
@@ -1548,8 +1553,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 type: 'folder',
                 name: 'My Computer',
                 children: {
-                    'Local Disk (C:)': { type: 'drive', name: 'Local Disk (C:)', children: {} },
-                    'CD Drive (D:)': { type: 'drive', name: 'CD Drive (D:)', children: {} }
+                    'C:': { 
+                        type: 'drive', 
+                        name: 'Local Disk (C:)', 
+                        children: {
+                            'Program Files': { type: 'folder', name: 'Program Files', children: {} },
+                            'Windows': { type: 'folder', name: 'Windows', children: {} },
+                            'Users': { 
+                                type: 'folder', 
+                                name: 'Users', 
+                                children: {
+                                    'Guest': { type: 'folder', name: 'Guest', children: {} }
+                                }
+                            }
+                        }
+                    },
+                    'D:': { type: 'drive', name: 'CD Drive (D:)', children: {} }
                 }
             },
             mynetwork: {
@@ -1571,9 +1590,40 @@ function saveFileSystem() {
     localStorage.setItem('linux5FileSystem', JSON.stringify(fileSystem));
 }
 
+function getCurrentFolder() {
+    let folder = fileSystem;
+    for (const pathPart of currentPath) {
+        if (folder[pathPart]) {
+            folder = folder[pathPart];
+        } else if (folder.children && folder.children[pathPart]) {
+            folder = folder.children[pathPart];
+        } else {
+            return null;
+        }
+    }
+    return folder;
+}
+
 function fmNavigate(path) {
-    currentPath = path;
-    fmHistory.push(path);
+    if (typeof path === 'string') {
+        // Direct navigation to root folders
+        currentPath = [path];
+    } else if (Array.isArray(path)) {
+        // Navigate to specific path array
+        currentPath = path;
+    }
+    
+    fmHistory = fmHistory.slice(0, fmHistoryIndex + 1);
+    fmHistory.push([...currentPath]);
+    fmHistoryIndex = fmHistory.length - 1;
+    renderFileManager();
+}
+
+function fmNavigateInto(folderName) {
+    // Navigate into a subfolder
+    currentPath.push(folderName);
+    fmHistory = fmHistory.slice(0, fmHistoryIndex + 1);
+    fmHistory.push([...currentPath]);
     fmHistoryIndex = fmHistory.length - 1;
     renderFileManager();
 }
@@ -1581,7 +1631,7 @@ function fmNavigate(path) {
 function fmBack() {
     if (fmHistoryIndex > 0) {
         fmHistoryIndex--;
-        currentPath = fmHistory[fmHistoryIndex];
+        currentPath = [...fmHistory[fmHistoryIndex]];
         renderFileManager();
     }
 }
@@ -1589,15 +1639,19 @@ function fmBack() {
 function fmForward() {
     if (fmHistoryIndex < fmHistory.length - 1) {
         fmHistoryIndex++;
-        currentPath = fmHistory[fmHistoryIndex];
+        currentPath = [...fmHistory[fmHistoryIndex]];
         renderFileManager();
     }
 }
 
 function fmUp() {
     // Navigate to parent folder
-    if (currentPath !== 'mycomputer') {
-        fmNavigate('mycomputer');
+    if (currentPath.length > 1) {
+        currentPath.pop();
+        fmHistory = fmHistory.slice(0, fmHistoryIndex + 1);
+        fmHistory.push([...currentPath]);
+        fmHistoryIndex = fmHistory.length - 1;
+        renderFileManager();
     }
 }
 
@@ -1629,15 +1683,44 @@ function renderFileManager() {
     
     if (!content) return;
     
-    const folder = fileSystem[currentPath];
+    const folder = getCurrentFolder();
     if (!folder) {
         content.innerHTML = '<p>Folder not found.</p>';
         return;
     }
     
+    // Create breadcrumb path
+    const breadcrumbs = [];
+    let tempPath = [];
+    for (let i = 0; i < currentPath.length; i++) {
+        tempPath.push(currentPath[i]);
+        let folderObj = fileSystem;
+        for (const p of tempPath) {
+            folderObj = folderObj[p] || (folderObj.children && folderObj.children[p]);
+        }
+        breadcrumbs.push({
+            name: folderObj ? folderObj.name : currentPath[i],
+            path: [...tempPath]
+        });
+    }
+    
     // Update UI
-    title.textContent = folder.name;
-    address.value = folder.name;
+    title.textContent = folder.name || 'My Computer';
+    
+    // Create clickable breadcrumb path
+    let pathHTML = '';
+    breadcrumbs.forEach((crumb, i) => {
+        if (i > 0) pathHTML += ' > ';
+        if (i === breadcrumbs.length - 1) {
+            pathHTML += crumb.name;
+        } else {
+            pathHTML += `<a href="#" onclick="fmNavigateToBreadcrumb(${i}); return false;" style="color: #0066cc; text-decoration: underline;">${crumb.name}</a>`;
+        }
+    });
+    address.value = pathHTML;
+    address.innerHTML = pathHTML;
+    address.style.background = 'transparent';
+    address.style.border = 'none';
     
     // Render items
     let html = '';
@@ -1665,7 +1748,7 @@ function renderFileManager() {
                 html += `<div class="fm-item" onclick="fmSelectItem('${key}')" ondblclick="fmOpenItem('${key}')">`;
                 html += `<div><span class="fm-item-icon">${icon}</span> ${item.name}</div>`;
                 html += `<div>${item.size || '-'}</div>`;
-                html += `<div>${item.type === 'folder' ? 'Folder' : 'File'}</div>`;
+                html += `<div>${item.type === 'folder' || item.type === 'drive' ? 'Folder' : 'File'}</div>`;
                 html += `<div>${item.modified || new Date().toLocaleDateString()}</div>`;
                 html += '</div>';
             } else {
@@ -1683,10 +1766,76 @@ function renderFileManager() {
     // Update status
     status.textContent = `${itemCount} item${itemCount !== 1 ? 's' : ''}`;
     
-    // Update sidebar selection
-    document.querySelectorAll('.fm-tree-item').forEach(item => {
-        item.classList.remove('selected');
+    // Update sidebar tree
+    renderFolderTree();
+}
+
+function fmNavigateToBreadcrumb(index) {
+    currentPath = currentPath.slice(0, index + 1);
+    fmHistory = fmHistory.slice(0, fmHistoryIndex + 1);
+    fmHistory.push([...currentPath]);
+    fmHistoryIndex = fmHistory.length - 1;
+    renderFileManager();
+}
+
+function renderFolderTree() {
+    const sidebar = document.getElementById('fm-sidebar');
+    if (!sidebar) return;
+    
+    let html = '';
+    
+    // Render root folders
+    const rootFolders = ['desktop', 'mydocuments', 'mycomputer', 'mynetwork', 'recycle'];
+    rootFolders.forEach(key => {
+        const folder = fileSystem[key];
+        const isExpanded = currentPath[0] === key;
+        const isSelected = currentPath.length === 1 && currentPath[0] === key;
+        
+        html += `<div class="fm-tree-item ${isSelected ? 'selected' : ''}" onclick="fmNavigate('${key}')">`;
+        html += `<span class="fm-icon">${getFileIcon(folder)}</span> ${folder.name}`;
+        html += '</div>';
+        
+        // If expanded, show children
+        if (isExpanded && folder.children) {
+            html += renderTreeChildren(folder.children, [key], 1);
+        }
     });
+    
+    sidebar.innerHTML = html;
+}
+
+function renderTreeChildren(children, parentPath, depth) {
+    let html = '';
+    const indent = 20 * depth;
+    
+    Object.keys(children).forEach(key => {
+        const item = children[key];
+        if (item.type === 'folder' || item.type === 'drive') {
+            const itemPath = [...parentPath, key];
+            const isExpanded = currentPath.length > itemPath.length && 
+                               currentPath.slice(0, itemPath.length).every((p, i) => p === itemPath[i]);
+            const isSelected = currentPath.length === itemPath.length && 
+                              currentPath.every((p, i) => p === itemPath[i]);
+            
+            html += `<div class="fm-tree-item ${isSelected ? 'selected' : ''}" style="padding-left: ${indent}px;" onclick="fmNavigateToPath(${JSON.stringify(itemPath).replace(/"/g, '&quot;')}); event.stopPropagation();">`;
+            html += `<span class="fm-icon">${getFileIcon(item)}</span> ${item.name}`;
+            html += '</div>';
+            
+            if (isExpanded && item.children) {
+                html += renderTreeChildren(item.children, itemPath, depth + 1);
+            }
+        }
+    });
+    
+    return html;
+}
+
+function fmNavigateToPath(pathArray) {
+    currentPath = pathArray;
+    fmHistory = fmHistory.slice(0, fmHistoryIndex + 1);
+    fmHistory.push([...currentPath]);
+    fmHistoryIndex = fmHistory.length - 1;
+    renderFileManager();
 }
 
 function getFileIcon(item) {
@@ -1710,14 +1859,14 @@ function fmSelectItem(key) {
 }
 
 function fmOpenItem(key) {
-    const folder = fileSystem[currentPath];
+    const folder = getCurrentFolder();
     const item = folder.children[key];
     
     if (!item) return;
     
     if (item.type === 'folder' || item.type === 'drive') {
-        // Navigate into folder - not yet fully implemented
-        showCatMessage(`Opening ${item.name}... (Sub-navigation not yet implemented)`);
+        // Navigate into folder
+        fmNavigateInto(key);
     } else if (item.type === 'file') {
         const ext = item.name.split('.').pop().toLowerCase();
         if (['txt', 'doc', 'docx'].includes(ext)) {
@@ -1735,7 +1884,14 @@ function fmOpenItem(key) {
 function fmCreateFolder() {
     const name = prompt('Enter folder name:');
     if (name) {
-        const folder = fileSystem[currentPath];
+        const folder = getCurrentFolder();
+        if (!folder.children) folder.children = {};
+        
+        if (folder.children[name]) {
+            showCatMessage(`A folder named "${name}" already exists! 😿`);
+            return;
+        }
+        
         folder.children[name] = {
             type: 'folder',
             name: name,
@@ -1751,7 +1907,14 @@ function fmCreateFolder() {
 function fmCreateFile() {
     const name = prompt('Enter file name (with extension):');
     if (name) {
-        const folder = fileSystem[currentPath];
+        const folder = getCurrentFolder();
+        if (!folder.children) folder.children = {};
+        
+        if (folder.children[name]) {
+            showCatMessage(`A file named "${name}" already exists! 😿`);
+            return;
+        }
+        
         folder.children[name] = {
             type: 'file',
             name: name,
@@ -1771,8 +1934,10 @@ function fmRename() {
     }
     
     const key = selectedFMItems[0];
-    const folder = fileSystem[currentPath];
+    const folder = getCurrentFolder();
     const item = folder.children[key];
+    
+    if (!item) return;
     
     const newName = prompt('Enter new name:', item.name);
     if (newName && newName !== item.name) {
@@ -1797,12 +1962,25 @@ function fmDelete() {
     }
     
     const key = selectedFMItems[0];
-    const folder = fileSystem[currentPath];
+    const folder = getCurrentFolder();
     const item = folder.children[key];
+    
+    if (!item) return;
     
     if (confirm(`Move "${item.name}" to Recycle Bin?`)) {
         // Move to recycle bin
-        fileSystem.recycle.children[key] = item;
+        const recycleBin = fileSystem.recycle;
+        if (!recycleBin.children) recycleBin.children = {};
+        
+        // Add timestamp to avoid conflicts
+        const recycleKey = `${key}_${Date.now()}`;
+        recycleBin.children[recycleKey] = {
+            ...item,
+            originalPath: [...currentPath],
+            originalKey: key,
+            deletedDate: new Date().toLocaleDateString()
+        };
+        
         delete folder.children[key];
         saveFileSystem();
         renderFileManager();
@@ -1816,7 +1994,10 @@ function fmCopy() {
         return;
     }
     
-    fmClipboard = selectedFMItems[0];
+    fmClipboard = {
+        key: selectedFMItems[0],
+        sourcePath: [...currentPath]
+    };
     fmClipboardAction = 'copy';
     showCatMessage("Item copied to clipboard! 📋");
 }
@@ -1827,7 +2008,10 @@ function fmCut() {
         return;
     }
     
-    fmClipboard = selectedFMItems[0];
+    fmClipboard = {
+        key: selectedFMItems[0],
+        sourcePath: [...currentPath]
+    };
     fmClipboardAction = 'cut';
     showCatMessage("Item cut to clipboard! ✂️");
 }
@@ -1838,19 +2022,48 @@ function fmPaste() {
         return;
     }
     
-    const sourceFolder = getCurrentFolderForItem(fmClipboard);
-    if (!sourceFolder) return;
+    // Get source folder
+    let sourceFolder = fileSystem;
+    for (const p of fmClipboard.sourcePath) {
+        if (sourceFolder[p]) {
+            sourceFolder = sourceFolder[p];
+        } else if (sourceFolder.children && sourceFolder.children[p]) {
+            sourceFolder = sourceFolder.children[p];
+        }
+    }
     
-    const item = sourceFolder.children[fmClipboard];
-    const targetFolder = fileSystem[currentPath];
+    const item = sourceFolder.children && sourceFolder.children[fmClipboard.key];
+    if (!item) {
+        showCatMessage("Source item not found! 😿");
+        return;
+    }
+    
+    const targetFolder = getCurrentFolder();
+    if (!targetFolder.children) targetFolder.children = {};
+    
+    // Check for name conflict
+    let newKey = fmClipboard.key;
+    let counter = 1;
+    while (targetFolder.children[newKey]) {
+        const ext = item.name.includes('.') ? '.' + item.name.split('.').pop() : '';
+        const baseName = item.name.replace(ext, '');
+        newKey = `${baseName} (${counter})${ext}`;
+        counter++;
+    }
     
     if (fmClipboardAction === 'copy') {
-        // Copy item
-        targetFolder.children[fmClipboard] = JSON.parse(JSON.stringify(item));
+        // Deep copy item
+        targetFolder.children[newKey] = JSON.parse(JSON.stringify(item));
+        if (newKey !== fmClipboard.key) {
+            targetFolder.children[newKey].name = newKey;
+        }
     } else if (fmClipboardAction === 'cut') {
         // Move item
-        targetFolder.children[fmClipboard] = item;
-        delete sourceFolder.children[fmClipboard];
+        targetFolder.children[newKey] = item;
+        if (newKey !== fmClipboard.key) {
+            item.name = newKey;
+        }
+        delete sourceFolder.children[fmClipboard.key];
         fmClipboard = null;
         fmClipboardAction = null;
     }
@@ -1860,24 +2073,59 @@ function fmPaste() {
     showCatMessage("Item pasted! 📌");
 }
 
-function getCurrentFolderForItem(key) {
-    // Search for the folder containing this item
-    for (const path in fileSystem) {
-        const folder = fileSystem[path];
-        if (folder.children && folder.children[key]) {
-            return folder;
-        }
-    }
-    return null;
-}
-
 function fmEmptyRecycleBin() {
-    if (confirm('Empty the Recycle Bin?')) {
+    if (confirm('Empty the Recycle Bin? This cannot be undone!')) {
         fileSystem.recycle.children = {};
         saveFileSystem();
         renderFileManager();
         showCatMessage("Recycle Bin emptied! 🗑️");
     }
+}
+
+function fmRestoreFromRecycle() {
+    if (selectedFMItems.length === 0) {
+        showCatMessage("Please select an item to restore! 😺");
+        return;
+    }
+    
+    const key = selectedFMItems[0];
+    const recycleBin = fileSystem.recycle;
+    const item = recycleBin.children[key];
+    
+    if (!item || !item.originalPath) {
+        showCatMessage("Cannot restore this item! 😿");
+        return;
+    }
+    
+    // Navigate to original location
+    let targetFolder = fileSystem;
+    for (const p of item.originalPath) {
+        if (targetFolder[p]) {
+            targetFolder = targetFolder[p];
+        } else if (targetFolder.children && targetFolder.children[p]) {
+            targetFolder = targetFolder.children[p];
+        } else {
+            showCatMessage("Original location not found! 😿");
+            return;
+        }
+    }
+    
+    // Restore item
+    if (!targetFolder.children) targetFolder.children = {};
+    const restoredKey = item.originalKey || key;
+    
+    // Remove metadata
+    const restoredItem = {...item};
+    delete restoredItem.originalPath;
+    delete restoredItem.originalKey;
+    delete restoredItem.deletedDate;
+    
+    targetFolder.children[restoredKey] = restoredItem;
+    delete recycleBin.children[key];
+    
+    saveFileSystem();
+    renderFileManager();
+    showCatMessage(`"${item.name}" restored! ♻️`);
 }
 
 // Initialize file system on page load
@@ -2310,6 +2558,11 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDateTimeCurrent();
         setInterval(updateDateTimeCurrent, 1000);
     }, 100);
+});
+
+// Initialize file system on page load
+document.addEventListener('DOMContentLoaded', () => {
+    initializeFileSystem();
 });
 
 // ===== SOLITAIRE GAME =====

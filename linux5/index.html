@@ -285,7 +285,7 @@ Secondary Slave: None
                 <button class="fm-btn" onclick="fmChangeView()" title="Views">👁️</button>
                 <div class="filemanager-address-bar">
                     <span class="address-label">Address</span>
-                    <input type="text" id="fm-address" readonly value="My Computer" />
+                    <div id="fm-address" style="flex: 1; padding: 2px; font-size: 11px;"></div>
                 </div>
                 <button class="fm-btn" onclick="fmGo()" title="Go">Go</button>
             </div>
@@ -1015,6 +1015,9 @@ Secondary Slave: None
         <div class="fm-context-menu-item" onclick="fmCopy()">📋 Copy</div>
         <div class="fm-context-menu-item" onclick="fmCut()">✂️ Cut</div>
         <div class="fm-context-menu-item" onclick="fmPaste()">📌 Paste</div>
+        <div class="fm-context-menu-divider"></div>
+        <div class="fm-context-menu-item" onclick="fmRestoreFromRecycle()">♻️ Restore</div>
+        <div class="fm-context-menu-item" onclick="fmEmptyRecycleBin()">🗑️ Empty Recycle Bin</div>
     </div>
 
     <!-- Taskbar -->
