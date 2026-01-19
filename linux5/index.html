@@ -384,13 +384,35 @@ Secondary Slave: None
         </div>
         <div class="window-content paint-content">
             <div class="paint-toolbar">
-                <button onclick="paintSelectTool('pen')" class="active" id="paint-pen">🖊️ Pen</button>
-                <button onclick="paintSelectTool('eraser')" id="paint-eraser">🧹 Eraser</button>
-                <button onclick="paintClear()">🗑️ Clear</button>
-                <input type="color" id="paint-color" value="#000000" onchange="paintChangeColor()" />
-                <input type="range" id="paint-size" min="1" max="20" value="3" />
+                <div class="paint-tools">
+                    <button onclick="paintSelectTool('pencil')" class="paint-tool-btn active" id="paint-pencil" title="Pencil">✏️</button>
+                    <button onclick="paintSelectTool('brush')" class="paint-tool-btn" id="paint-brush" title="Brush">🖌️</button>
+                    <button onclick="paintSelectTool('eraser')" class="paint-tool-btn" id="paint-eraser" title="Eraser">🧹</button>
+                    <button onclick="paintSelectTool('fill')" class="paint-tool-btn" id="paint-fill" title="Fill Bucket">🪣</button>
+                    <button onclick="paintSelectTool('line')" class="paint-tool-btn" id="paint-line" title="Line">📏</button>
+                    <button onclick="paintSelectTool('rectangle')" class="paint-tool-btn" id="paint-rectangle" title="Rectangle">⬜</button>
+                    <button onclick="paintSelectTool('circle')" class="paint-tool-btn" id="paint-circle" title="Circle">⭕</button>
+                    <button onclick="paintSelectTool('text')" class="paint-tool-btn" id="paint-text" title="Text">🔤</button>
+                </div>
+                <div class="paint-separator"></div>
+                <div class="paint-options">
+                    <label>Size: <input type="range" id="paint-size" min="1" max="50" value="3" oninput="paintChangeSize()" /></label>
+                    <span id="paint-size-display">3px</span>
+                </div>
+                <div class="paint-separator"></div>
+                <div class="paint-colors">
+                    <label>Primary: <input type="color" id="paint-color" value="#000000" onchange="paintChangeColor()" /></label>
+                    <label>Background: <input type="color" id="paint-bg-color" value="#ffffff" onchange="paintChangeBgColor()" /></label>
+                </div>
+                <div class="paint-separator"></div>
+                <div class="paint-actions">
+                    <button onclick="paintUndo()" title="Undo">↶ Undo</button>
+                    <button onclick="paintRedo()" title="Redo">↷ Redo</button>
+                    <button onclick="paintClear()" title="Clear">🗑️ Clear</button>
+                    <button onclick="paintSave()" title="Save">💾 Save</button>
+                </div>
             </div>
-            <canvas id="paint-canvas" width="600" height="400"></canvas>
+            <canvas id="paint-canvas" width="800" height="600"></canvas>
         </div>
     </div>
 
@@ -445,8 +467,13 @@ Secondary Slave: None
         <div class="window-content minesweeper-content">
             <div class="minesweeper-header">
                 <button onclick="minesweeperNew()">New Game</button>
-                <span id="minesweeper-mines">10</span> mines
-                <span id="minesweeper-time">0</span>s
+                <select id="minesweeper-difficulty" onchange="minesweeperChangeDifficulty()">
+                    <option value="beginner">Beginner (8x8)</option>
+                    <option value="intermediate">Intermediate (16x16)</option>
+                    <option value="expert">Expert (30x16)</option>
+                </select>
+                <span>Mines: <span id="minesweeper-mines">10</span></span>
+                <span>Time: <span id="minesweeper-time">0</span>s</span>
             </div>
             <div id="minesweeper-board"></div>
         </div>
@@ -768,13 +795,29 @@ Secondary Slave: None
         </div>
         <div class="window-content">
             <h3>Desktop Background</h3>
-            <select id="display-wallpaper" onchange="applyDisplaySettings()">
-                <option value="#5A8CC7">Blue Gradient (Default)</option>
-                <option value="#2E5B2E">Green</option>
-                <option value="#8B4513">Brown</option>
-                <option value="#4B0082">Purple</option>
-                <option value="#000000">Black</option>
+            
+            <div class="wallpaper-preview" id="wallpaper-preview"></div>
+            
+            <h4>Wallpaper Type:</h4>
+            <select id="wallpaper-type" onchange="updateWallpaperOptions()">
+                <option value="color">Solid Color</option>
+                <option value="builtin">Built-in Wallpapers</option>
+                <option value="url">Image URL</option>
+                <option value="upload">Upload Image</option>
             </select>
+            
+            <div id="wallpaper-options" style="margin-top: 10px;">
+                <!-- Options will be inserted here -->
+            </div>
+            
+            <h4 style="margin-top: 15px;">Position:</h4>
+            <select id="wallpaper-position">
+                <option value="stretch">Stretch</option>
+                <option value="tile">Tile</option>
+                <option value="center">Center</option>
+                <option value="fill">Fill (Cover)</option>
+            </select>
+            
             <h3 style="margin-top: 15px;">Font Size</h3>
             <select id="display-fontsize" onchange="applyDisplaySettings()">
                 <option value="normal">Normal</option>

@@ -827,18 +827,23 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
                     ${triedProxies.join('<br>')}
                 </p>
                 <p style="font-size: 12px; color: #666; margin-top: 15px;">
-                    This could be due to:
+                    <strong>Possible reasons:</strong>
                 </p>
                 <ul style="text-align: left; display: inline-block; font-size: 12px; color: #666;">
-                    <li>The website blocking all proxy access (CORS)</li>
-                    <li>The website being unavailable</li>
-                    <li>Network connectivity issues</li>
-                    <li>All proxy services being temporarily unavailable</li>
+                    <li>The website blocks embedded viewing (X-Frame-Options)</li>
+                    <li>The website requires WebSocket connections</li>
+                    <li>The website has frame-busting JavaScript</li>
+                    <li>All proxy services are temporarily unavailable</li>
                 </ul>
                 <p style="margin-top: 20px;">
-                    <button onclick="loadURLWithProxy('${url}', 0, [])" class="browser-btn">Try Again</button>
-                    <button onclick="window.open('${url}', '_blank')" class="browser-btn">Open in New Tab</button>
-                    <button onclick="browserNavigate('welcome')" class="browser-btn">Go to Home Page</button>
+                    <button onclick="window.open('${url}', '_blank')" class="browser-btn">🔗 Open in New Tab</button>
+                    <button onclick="loadURLWithProxy('${url}', 0, [])" class="browser-btn">🔄 Try Again</button>
+                    <button onclick="browserNavigate('welcome')" class="browser-btn">🏠 Go to Home Page</button>
+                </p>
+                <p style="margin-top: 15px; font-size: 11px; color: #999;">
+                    <strong>Suggested alternatives:</strong> Try <a href="#" onclick="browserLoadURL('https://example.com'); return false;">Example.com</a>, 
+                    <a href="#" onclick="browserLoadURL('https://www.wikipedia.org'); return false;">Wikipedia</a>, or 
+                    <a href="#" onclick="browserLoadURL('https://www.google.com'); return false;">Google</a>
                 </p>
             </div>
         `;
@@ -850,7 +855,7 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
     triedProxies.push(proxy.name);
     
     // Show loading state
-    updateBrowserStatus(`Loading via ${proxy.name}...`);
+    updateBrowserStatus(`Loading via ${proxy.name} (${proxyIndex + 1}/${proxyList.length})...`);
     loading.classList.remove('hidden');
     
     // Clear content and show loading spinner
@@ -859,7 +864,8 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
             <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #0066cc; border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
             <p>Loading ${url}...</p>
             <p style="font-size: 12px; color: #666;">Using ${proxy.name} proxy (${proxyIndex + 1}/${proxyList.length})</p>
-            <p style="font-size: 10px; color: #999; margin-top: 10px;">Tried: ${triedProxies.join(', ')}</p>
+            <p style="font-size: 10px; color: #999; margin-top: 10px;">Attempted: ${triedProxies.join(', ')}</p>
+            <p style="font-size: 10px; color: #999; margin-top: 5px;">This may take a few seconds...</p>
         </div>
     `;
     
@@ -867,42 +873,47 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
     const proxyURL = proxy.url + encodeURIComponent(url);
     
     try {
-        // Set timeout for fetch (10 seconds as per requirements)
+        // Set timeout for fetch (15 seconds for better success rate)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
-        const response = await fetch(proxyURL, { signal: controller.signal });
+        const response = await fetch(proxyURL, { 
+            signal: controller.signal,
+            headers: {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            }
+        });
         clearTimeout(timeoutId);
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
         
-        const html = await response.text();
+        let html = await response.text();
         
         // Hide loading
         loading.classList.add('hidden');
         
-        // Process HTML to fix relative URLs
-        const processedHTML = processProxiedHTML(html, url);
+        // Advanced proxy fixes for frame-busting and URL rewriting
+        html = processProxiedHTML(html, url);
         
         // Clear content first
         content.innerHTML = '';
         
-        // Create iframe and inject HTML using srcdoc (not src)
+        // Create iframe and inject HTML using srcdoc (avoids X-Frame-Options)
         const iframe = document.createElement('iframe');
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
-        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
         
-        // Use srcdoc to inject HTML (avoids X-Frame-Options issues)
-        iframe.srcdoc = processedHTML;
+        // Use srcdoc to inject HTML
+        iframe.srcdoc = html;
         
         content.appendChild(iframe);
         
         // Update status to Done only after successful load
-        updateBrowserStatus('Done');
+        updateBrowserStatus(`Done - Loaded via ${proxy.name}`);
         
         // Add to history
         browserHistory.push({ type: 'url', url: currentBrowserURL });
@@ -928,6 +939,18 @@ function processProxiedHTML(html, originalURL) {
         const urlObj = new URL(originalURL);
         const baseURL = `${urlObj.protocol}//${urlObj.host}`;
         
+        // Remove frame-busting code (anti-iframe scripts)
+        html = html.replace(/if\s*\(\s*top\s*[!=]==?\s*self\s*\)/gi, 'if(false)');
+        html = html.replace(/if\s*\(\s*window\s*[!=]==?\s*window\.top\s*\)/gi, 'if(false)');
+        html = html.replace(/if\s*\(\s*parent\s*[!=]==?\s*self\s*\)/gi, 'if(false)');
+        html = html.replace(/if\s*\(\s*top\s*[!=]==?\s*window\s*\)/gi, 'if(false)');
+        html = html.replace(/window\.top\.location/gi, 'window.location');
+        html = html.replace(/top\.location/gi, 'window.location');
+        html = html.replace(/parent\.location/gi, 'window.location');
+        
+        // Remove X-Frame-Options detection
+        html = html.replace(/['"]X-Frame-Options['"]/gi, '"X-Disabled-Header"');
+        
         // Inject base tag to fix relative URLs
         if (!html.includes('<base')) {
             html = html.replace(/<head>/i, `<head><base href="${baseURL}/">`);
@@ -945,11 +968,30 @@ function processProxiedHTML(html, originalURL) {
             html = html.replace(/<head>/i, '<head><meta name="viewport" content="width=device-width, initial-scale=1">');
         }
         
-        // Add CSP meta to allow loading resources
-        const cspMeta = '<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">';
+        // Add CSP meta to allow loading resources (but more permissive)
+        const cspMeta = '<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; frame-ancestors *;">';
         if (!html.includes('Content-Security-Policy')) {
             html = html.replace(/<head>/i, '<head>' + cspMeta);
         }
+        
+        // Inject script to disable additional frame-busting attempts
+        const antiFrameBustScript = `
+            <script>
+            (function() {
+                try {
+                    Object.defineProperty(window, 'top', {
+                        get: function() { return window; },
+                        set: function() {}
+                    });
+                    Object.defineProperty(window, 'parent', {
+                        get: function() { return window; },
+                        set: function() {}
+                    });
+                } catch(e) {}
+            })();
+            </script>
+        `;
+        html = html.replace(/<head>/i, '<head>' + antiFrameBustScript);
         
     } catch (e) {
         console.error('Error processing HTML:', e);
@@ -1141,28 +1183,69 @@ function calcDecimal() {
 // Paint Functions
 let paintCtx = null;
 let isPainting = false;
-let paintTool = 'pen';
+let paintTool = 'pencil';
 let paintColor = '#000000';
+let paintBgColor = '#ffffff';
 let paintSize = 3;
+let paintStartX = 0;
+let paintStartY = 0;
+let paintHistory = [];
+let paintHistoryStep = -1;
+let paintTempCanvas = null;
 
 function initializePaint() {
     const canvas = document.getElementById('paint-canvas');
     paintCtx = canvas.getContext('2d');
     
+    // Create temporary canvas for preview
+    paintTempCanvas = document.createElement('canvas');
+    paintTempCanvas.width = canvas.width;
+    paintTempCanvas.height = canvas.height;
+    
+    // Fill with white background
+    paintCtx.fillStyle = '#ffffff';
+    paintCtx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Save initial state
+    paintSaveState();
+    
     canvas.addEventListener('mousedown', startPaint);
     canvas.addEventListener('mousemove', paint);
     canvas.addEventListener('mouseup', stopPaint);
     canvas.addEventListener('mouseleave', stopPaint);
+    
+    // Update size display
+    document.getElementById('paint-size-display').textContent = paintSize + 'px';
 }
 
 function startPaint(e) {
     isPainting = true;
     const rect = e.target.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    paintStartX = e.clientX - rect.left;
+    paintStartY = e.clientY - rect.top;
     
-    paintCtx.beginPath();
-    paintCtx.moveTo(x, y);
+    if (paintTool === 'pencil' || paintTool === 'brush' || paintTool === 'eraser') {
+        paintCtx.beginPath();
+        paintCtx.moveTo(paintStartX, paintStartY);
+    } else if (paintTool === 'fill') {
+        paintFloodFill(Math.floor(paintStartX), Math.floor(paintStartY), paintColor);
+        paintSaveState();
+        isPainting = false;
+    } else if (paintTool === 'text') {
+        const text = prompt('Enter text:');
+        if (text) {
+            paintCtx.font = (paintSize * 5) + 'px Arial';
+            paintCtx.fillStyle = paintColor;
+            paintCtx.fillText(text, paintStartX, paintStartY);
+            paintSaveState();
+        }
+        isPainting = false;
+    } else if (paintTool === 'line' || paintTool === 'rectangle' || paintTool === 'circle') {
+        // Save current canvas state for preview
+        const ctx = paintTempCanvas.getContext('2d');
+        ctx.clearRect(0, 0, paintTempCanvas.width, paintTempCanvas.height);
+        ctx.drawImage(document.getElementById('paint-canvas'), 0, 0);
+    }
 }
 
 function paint(e) {
@@ -1172,33 +1255,214 @@ function paint(e) {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    paintCtx.lineWidth = paintSize;
-    paintCtx.lineCap = 'round';
-    paintCtx.strokeStyle = paintTool === 'eraser' ? '#ffffff' : paintColor;
-    
-    paintCtx.lineTo(x, y);
-    paintCtx.stroke();
+    if (paintTool === 'pencil') {
+        paintCtx.lineWidth = paintSize;
+        paintCtx.lineCap = 'round';
+        paintCtx.strokeStyle = paintColor;
+        paintCtx.lineTo(x, y);
+        paintCtx.stroke();
+    } else if (paintTool === 'brush') {
+        paintCtx.lineWidth = paintSize * 2;
+        paintCtx.lineCap = 'round';
+        paintCtx.lineJoin = 'round';
+        paintCtx.strokeStyle = paintColor;
+        paintCtx.lineTo(x, y);
+        paintCtx.stroke();
+    } else if (paintTool === 'eraser') {
+        paintCtx.lineWidth = paintSize * 3;
+        paintCtx.lineCap = 'round';
+        paintCtx.strokeStyle = paintBgColor;
+        paintCtx.lineTo(x, y);
+        paintCtx.stroke();
+    } else if (paintTool === 'line' || paintTool === 'rectangle' || paintTool === 'circle') {
+        // Preview mode - restore and redraw
+        const canvas = document.getElementById('paint-canvas');
+        paintCtx.clearRect(0, 0, canvas.width, canvas.height);
+        paintCtx.drawImage(paintTempCanvas, 0, 0);
+        
+        if (paintTool === 'line') {
+            paintCtx.beginPath();
+            paintCtx.moveTo(paintStartX, paintStartY);
+            paintCtx.lineTo(x, y);
+            paintCtx.lineWidth = paintSize;
+            paintCtx.strokeStyle = paintColor;
+            paintCtx.stroke();
+        } else if (paintTool === 'rectangle') {
+            paintCtx.strokeStyle = paintColor;
+            paintCtx.lineWidth = paintSize;
+            paintCtx.strokeRect(paintStartX, paintStartY, x - paintStartX, y - paintStartY);
+        } else if (paintTool === 'circle') {
+            const radius = Math.sqrt(Math.pow(x - paintStartX, 2) + Math.pow(y - paintStartY, 2));
+            paintCtx.beginPath();
+            paintCtx.arc(paintStartX, paintStartY, radius, 0, Math.PI * 2);
+            paintCtx.strokeStyle = paintColor;
+            paintCtx.lineWidth = paintSize;
+            paintCtx.stroke();
+        }
+    }
 }
 
 function stopPaint() {
+    if (isPainting && (paintTool === 'pencil' || paintTool === 'brush' || paintTool === 'eraser' ||
+                       paintTool === 'line' || paintTool === 'rectangle' || paintTool === 'circle')) {
+        paintSaveState();
+    }
     isPainting = false;
 }
 
 function paintSelectTool(tool) {
     paintTool = tool;
-    document.querySelectorAll('.paint-toolbar button').forEach(btn => {
+    document.querySelectorAll('.paint-tool-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     document.getElementById('paint-' + tool).classList.add('active');
+    
+    // Change cursor
+    const canvas = document.getElementById('paint-canvas');
+    if (tool === 'eraser') {
+        canvas.style.cursor = 'not-allowed';
+    } else if (tool === 'fill') {
+        canvas.style.cursor = 'copy';
+    } else if (tool === 'text') {
+        canvas.style.cursor = 'text';
+    } else {
+        canvas.style.cursor = 'crosshair';
+    }
 }
 
 function paintChangeColor() {
     paintColor = document.getElementById('paint-color').value;
 }
 
+function paintChangeBgColor() {
+    paintBgColor = document.getElementById('paint-bg-color').value;
+}
+
+function paintChangeSize() {
+    paintSize = parseInt(document.getElementById('paint-size').value);
+    document.getElementById('paint-size-display').textContent = paintSize + 'px';
+}
+
 function paintClear() {
+    if (confirm('Clear the entire canvas?')) {
+        const canvas = document.getElementById('paint-canvas');
+        paintCtx.fillStyle = paintBgColor;
+        paintCtx.fillRect(0, 0, canvas.width, canvas.height);
+        paintSaveState();
+    }
+}
+
+function paintSaveState() {
+    // Remove any states after current step
+    paintHistory = paintHistory.slice(0, paintHistoryStep + 1);
+    
+    // Save current state
     const canvas = document.getElementById('paint-canvas');
-    paintCtx.clearRect(0, 0, canvas.width, canvas.height);
+    paintHistory.push(canvas.toDataURL());
+    paintHistoryStep++;
+    
+    // Limit history to 50 states
+    if (paintHistory.length > 50) {
+        paintHistory.shift();
+        paintHistoryStep--;
+    }
+}
+
+function paintUndo() {
+    if (paintHistoryStep > 0) {
+        paintHistoryStep--;
+        paintRestoreState();
+    }
+}
+
+function paintRedo() {
+    if (paintHistoryStep < paintHistory.length - 1) {
+        paintHistoryStep++;
+        paintRestoreState();
+    }
+}
+
+function paintRestoreState() {
+    const canvas = document.getElementById('paint-canvas');
+    const img = new Image();
+    img.onload = function() {
+        paintCtx.clearRect(0, 0, canvas.width, canvas.height);
+        paintCtx.drawImage(img, 0, 0);
+    };
+    img.src = paintHistory[paintHistoryStep];
+}
+
+function paintSave() {
+    const canvas = document.getElementById('paint-canvas');
+    const link = document.createElement('a');
+    link.download = 'painting_' + Date.now() + '.png';
+    link.href = canvas.toDataURL();
+    link.click();
+    showCatMessage('Drawing saved! 💾');
+}
+
+function paintFloodFill(startX, startY, fillColor) {
+    const canvas = document.getElementById('paint-canvas');
+    const imageData = paintCtx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    
+    // Convert fill color to RGB
+    const fillRgb = hexToRgb(fillColor);
+    
+    // Get start pixel color
+    const startPos = (startY * canvas.width + startX) * 4;
+    const startR = pixels[startPos];
+    const startG = pixels[startPos + 1];
+    const startB = pixels[startPos + 2];
+    
+    // Don't fill if same color
+    if (startR === fillRgb.r && startG === fillRgb.g && startB === fillRgb.b) {
+        return;
+    }
+    
+    const stack = [[startX, startY]];
+    const visited = new Set();
+    
+    while (stack.length > 0) {
+        const [x, y] = stack.pop();
+        
+        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) continue;
+        
+        const key = y * canvas.width + x;
+        if (visited.has(key)) continue;
+        visited.add(key);
+        
+        const pos = key * 4;
+        const r = pixels[pos];
+        const g = pixels[pos + 1];
+        const b = pixels[pos + 2];
+        
+        // Check if pixel matches start color
+        if (r === startR && g === startG && b === startB) {
+            // Fill pixel
+            pixels[pos] = fillRgb.r;
+            pixels[pos + 1] = fillRgb.g;
+            pixels[pos + 2] = fillRgb.b;
+            pixels[pos + 3] = 255;
+            
+            // Add neighbors
+            stack.push([x + 1, y]);
+            stack.push([x - 1, y]);
+            stack.push([x, y + 1]);
+            stack.push([x, y - 1]);
+        }
+    }
+    
+    paintCtx.putImageData(imageData, 0, 0);
+}
+
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : { r: 0, g: 0, b: 0 };
 }
 
 // Minesweeper Functions
@@ -1210,8 +1474,34 @@ let mineRevealed = 0;
 let mineGameOver = false;
 let mineTimer = 0;
 let mineTimerInterval = null;
+let mineDifficulty = 'beginner';
+
+const MINE_DIFFICULTIES = {
+    beginner: { rows: 8, cols: 8, mines: 10 },
+    intermediate: { rows: 16, cols: 16, mines: 40 },
+    expert: { rows: 16, cols: 30, mines: 99 }
+};
 
 function initializeMinesweeper() {
+    minesweeperNew();
+}
+
+function minesweeperChangeDifficulty() {
+    const select = document.getElementById('minesweeper-difficulty');
+    mineDifficulty = select.value;
+    const config = MINE_DIFFICULTIES[mineDifficulty];
+    mineRows = config.rows;
+    mineCols = config.cols;
+    mineCount = config.mines;
+    
+    // Resize window for difficulty
+    const window = document.getElementById('minesweeper-window');
+    const cellSize = 32; // 30px + 2px border
+    const width = Math.min(mineCols * cellSize + 60, window.innerWidth - 100);
+    const height = mineRows * cellSize + 200;
+    window.style.width = width + 'px';
+    window.style.height = height + 'px';
+    
     minesweeperNew();
 }
 
@@ -1274,7 +1564,7 @@ function minesweeperNew() {
 function renderMinesweeper() {
     const board = document.getElementById('minesweeper-board');
     board.innerHTML = '';
-    board.style.gridTemplateColumns = `repeat(${mineCols}, 25px)`;
+    board.style.gridTemplateColumns = `repeat(${mineCols}, 30px)`;
     
     for (let r = 0; r < mineRows; r++) {
         for (let c = 0; c < mineCols; c++) {
@@ -2264,12 +2554,12 @@ function loadAllSettings() {
 
 // Display Settings
 function loadDisplaySettings() {
-    const wallpaper = localStorage.getItem('displayWallpaper') || '#5A8CC7';
+    const wallpaperData = localStorage.getItem('wallpaperData');
     const fontsize = localStorage.getItem('displayFontsize') || 'normal';
     
-    document.body.style.background = wallpaper;
-    if (wallpaper.startsWith('#')) {
-        document.body.style.backgroundImage = 'none';
+    if (wallpaperData) {
+        const data = JSON.parse(wallpaperData);
+        setWallpaper(data.type, data.value, data.position);
     }
     
     if (fontsize === 'large') {
@@ -2278,29 +2568,229 @@ function loadDisplaySettings() {
         document.body.style.fontSize = '16px';
     }
     
-    // Update UI
-    const wallpaperSelect = document.getElementById('display-wallpaper');
+    // Update UI when window opens
     const fontsizeSelect = document.getElementById('display-fontsize');
-    if (wallpaperSelect) wallpaperSelect.value = wallpaper;
     if (fontsizeSelect) fontsizeSelect.value = fontsize;
 }
 
-function applyDisplaySettings() {
-    const wallpaper = document.getElementById('display-wallpaper').value;
-    const fontsize = document.getElementById('display-fontsize').value;
+const BUILTIN_WALLPAPERS = {
+    'bliss': {
+        name: 'Bliss',
+        url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="sky" x1="0%25" y1="0%25" x2="0%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%2387CEEB;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%2300BFFF;stop-opacity:1" /%3E%3C/linearGradient%3E%3ClinearGradient id="grass" x1="0%25" y1="0%25" x2="0%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%239ACD32;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%2332CD32;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23sky)" width="800" height="400"/%3E%3Cellipse cx="400" cy="500" rx="400" ry="200" fill="url(%23grass)"/%3E%3C/svg%3E'
+    },
+    'autumn': {
+        name: 'Autumn',
+        url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="autumn" x1="0%25" y1="0%25" x2="0%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23FF8C00;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%23DC143C;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23autumn)" width="800" height="600"/%3E%3C/svg%3E'
+    },
+    'azul': {
+        name: 'Azul',
+        url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"%3E%3Cdefs%3E%3ClinearGradient id="azul" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%230066cc;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%2300ccff;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23azul)" width="800" height="600"/%3E%3C/svg%3E'
+    },
+    'default': {
+        name: 'XP Blue',
+        url: ''
+    }
+};
+
+function updateWallpaperOptions() {
+    const type = document.getElementById('wallpaper-type').value;
+    const optionsDiv = document.getElementById('wallpaper-options');
     
-    localStorage.setItem('displayWallpaper', wallpaper);
-    localStorage.setItem('displayFontsize', fontsize);
+    optionsDiv.innerHTML = '';
     
-    document.body.style.background = wallpaper;
-    if (wallpaper.startsWith('#')) {
-        document.body.style.backgroundImage = 'none';
+    if (type === 'color') {
+        optionsDiv.innerHTML = `
+            <label>Choose a color:</label>
+            <input type="color" id="wallpaper-color-picker" value="#5A8CC7" oninput="previewWallpaper()" />
+        `;
+    } else if (type === 'builtin') {
+        optionsDiv.innerHTML = '<div class="builtin-wallpaper-grid" id="builtin-wallpaper-grid"></div>';
+        const grid = document.getElementById('builtin-wallpaper-grid');
+        
+        for (const [key, wallpaper] of Object.entries(BUILTIN_WALLPAPERS)) {
+            const div = document.createElement('div');
+            div.className = 'builtin-wallpaper-option';
+            div.dataset.key = key;
+            div.onclick = () => {
+                document.querySelectorAll('.builtin-wallpaper-option').forEach(el => el.classList.remove('selected'));
+                div.classList.add('selected');
+                previewWallpaper();
+            };
+            
+            const thumb = document.createElement('div');
+            thumb.className = 'builtin-wallpaper-thumb';
+            if (key === 'default') {
+                thumb.style.background = 'linear-gradient(to bottom, #5A8CC7 0%, #3A6EA5 100%)';
+            } else {
+                thumb.style.backgroundImage = `url(${wallpaper.url})`;
+            }
+            
+            const name = document.createElement('div');
+            name.className = 'builtin-wallpaper-name';
+            name.textContent = wallpaper.name;
+            
+            div.appendChild(thumb);
+            div.appendChild(name);
+            grid.appendChild(div);
+        }
+    } else if (type === 'url') {
+        optionsDiv.innerHTML = `
+            <label>Enter image URL:</label>
+            <input type="text" id="wallpaper-url-input" placeholder="https://example.com/image.jpg" oninput="previewWallpaper()" />
+        `;
+    } else if (type === 'upload') {
+        optionsDiv.innerHTML = `
+            <label>Upload an image:</label>
+            <input type="file" id="wallpaper-file-input" accept="image/*" onchange="handleWallpaperUpload()" />
+        `;
     }
     
+    previewWallpaper();
+}
+
+function handleWallpaperUpload() {
+    const file = document.getElementById('wallpaper-file-input').files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('wallpaper-preview');
+            preview.style.backgroundImage = `url(${e.target.result})`;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function previewWallpaper() {
+    const type = document.getElementById('wallpaper-type').value;
+    const position = document.getElementById('wallpaper-position').value;
+    const preview = document.getElementById('wallpaper-preview');
+    
+    if (type === 'color') {
+        const color = document.getElementById('wallpaper-color-picker').value;
+        preview.style.background = color;
+        preview.style.backgroundImage = 'none';
+    } else if (type === 'builtin') {
+        const selected = document.querySelector('.builtin-wallpaper-option.selected');
+        if (selected) {
+            const key = selected.dataset.key;
+            const wallpaper = BUILTIN_WALLPAPERS[key];
+            if (key === 'default') {
+                preview.style.background = 'linear-gradient(to bottom, #5A8CC7 0%, #3A6EA5 100%)';
+                preview.style.backgroundImage = 'none';
+            } else {
+                preview.style.backgroundImage = `url(${wallpaper.url})`;
+            }
+        }
+    } else if (type === 'url') {
+        const url = document.getElementById('wallpaper-url-input').value;
+        if (url) {
+            preview.style.backgroundImage = `url(${url})`;
+        }
+    }
+    
+    // Apply position
+    if (position === 'stretch') {
+        preview.style.backgroundSize = '100% 100%';
+        preview.style.backgroundRepeat = 'no-repeat';
+    } else if (position === 'tile') {
+        preview.style.backgroundSize = 'auto';
+        preview.style.backgroundRepeat = 'repeat';
+    } else if (position === 'center') {
+        preview.style.backgroundSize = 'auto';
+        preview.style.backgroundRepeat = 'no-repeat';
+        preview.style.backgroundPosition = 'center';
+    } else if (position === 'fill') {
+        preview.style.backgroundSize = 'cover';
+        preview.style.backgroundRepeat = 'no-repeat';
+    }
+}
+
+function setWallpaper(type, value, position) {
+    const desktop = document.body;
+    
+    if (type === 'color') {
+        desktop.style.background = value;
+        desktop.style.backgroundImage = 'none';
+    } else if (type === 'builtin') {
+        const wallpaper = BUILTIN_WALLPAPERS[value];
+        if (value === 'default') {
+            desktop.style.background = 'linear-gradient(to bottom, #5A8CC7 0%, #3A6EA5 100%)';
+            desktop.style.backgroundImage = 'none';
+        } else {
+            desktop.style.backgroundImage = `url(${wallpaper.url})`;
+        }
+    } else if (type === 'url' || type === 'upload') {
+        desktop.style.backgroundImage = `url(${value})`;
+    }
+    
+    // Apply position
+    if (position === 'stretch') {
+        desktop.style.backgroundSize = '100% 100%';
+        desktop.style.backgroundRepeat = 'no-repeat';
+    } else if (position === 'tile') {
+        desktop.style.backgroundSize = 'auto';
+        desktop.style.backgroundRepeat = 'repeat';
+    } else if (position === 'center') {
+        desktop.style.backgroundSize = 'auto';
+        desktop.style.backgroundRepeat = 'no-repeat';
+        desktop.style.backgroundPosition = 'center';
+    } else if (position === 'fill') {
+        desktop.style.backgroundSize = 'cover';
+        desktop.style.backgroundRepeat = 'no-repeat';
+        desktop.style.backgroundPosition = 'center';
+    }
+}
+
+function applyDisplaySettings() {
+    const type = document.getElementById('wallpaper-type').value;
+    const position = document.getElementById('wallpaper-position').value;
+    const fontsize = document.getElementById('display-fontsize').value;
+    
+    let value = '';
+    
+    if (type === 'color') {
+        value = document.getElementById('wallpaper-color-picker').value;
+    } else if (type === 'builtin') {
+        const selected = document.querySelector('.builtin-wallpaper-option.selected');
+        if (selected) {
+            value = selected.dataset.key;
+        } else {
+            value = 'default';
+        }
+    } else if (type === 'url') {
+        value = document.getElementById('wallpaper-url-input').value;
+    } else if (type === 'upload') {
+        const preview = document.getElementById('wallpaper-preview');
+        const bgImage = preview.style.backgroundImage;
+        if (bgImage && bgImage !== 'none') {
+            value = bgImage.slice(5, -2); // Extract URL from url("...")
+        }
+    }
+    
+    setWallpaper(type, value, position);
+    
+    // Save settings
+    localStorage.setItem('wallpaperData', JSON.stringify({ type, value, position }));
+    localStorage.setItem('displayFontsize', fontsize);
+    
+    // Apply font size
     document.body.style.fontSize = fontsize === 'large' ? '14px' : fontsize === 'xlarge' ? '16px' : '12px';
     
     showCatMessage('Display settings applied! 🖥️');
 }
+
+// Initialize wallpaper options when display settings window opens
+document.addEventListener('DOMContentLoaded', () => {
+    const displayWindow = document.getElementById('display-settings-window');
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'class' && displayWindow.classList.contains('active')) {
+                updateWallpaperOptions();
+            }
+        });
+    });
+    observer.observe(displayWindow, { attributes: true });
+});
 
 // Sound Settings
 function loadSoundSettings() {

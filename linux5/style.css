@@ -1327,39 +1327,112 @@ body {
     display: flex;
     flex-direction: column;
     padding: 0 !important;
+    height: calc(100% - 28px);
 }
 
 .paint-toolbar {
     display: flex;
-    gap: 10px;
+    gap: 5px;
     padding: 5px;
     background: #f0f0f0;
     border-bottom: 1px solid #ccc;
     align-items: center;
+    flex-wrap: wrap;
 }
 
-.paint-toolbar button {
-    padding: 5px 10px;
+.paint-tools {
+    display: flex;
+    gap: 2px;
+}
+
+.paint-tool-btn {
+    width: 32px;
+    height: 32px;
+    border: 2px outset #999;
+    background: #e0e0e0;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.paint-tool-btn:hover {
+    background: #f0f0f0;
+}
+
+.paint-tool-btn.active {
+    background: #cce5ff;
+    border: 2px inset #0066cc;
+}
+
+.paint-separator {
+    width: 1px;
+    height: 30px;
+    background: #999;
+    margin: 0 5px;
+}
+
+.paint-options, .paint-colors, .paint-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    font-size: 11px;
+}
+
+.paint-options label, .paint-colors label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.paint-options input[type="range"] {
+    width: 80px;
+}
+
+#paint-size-display {
+    min-width: 30px;
+    font-weight: bold;
+}
+
+.paint-actions button {
+    padding: 4px 8px;
     border: 1px solid #999;
     background: white;
-    border-radius: 3px;
+    border-radius: 2px;
     cursor: pointer;
+    font-size: 11px;
 }
 
-.paint-toolbar button.active {
-    background: #cce5ff;
-    border-color: #0066cc;
+.paint-actions button:hover {
+    background: #e8f4ff;
+}
+
+.paint-canvas-container {
+    flex: 1;
+    overflow: auto;
+    background: #808080;
+    padding: 10px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
 }
 
 #paint-canvas {
     background: white;
     cursor: crosshair;
     display: block;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
 }
 
 /* Minesweeper */
 .minesweeper-content {
     padding: 10px !important;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 28px);
+    overflow: auto;
 }
 
 .minesweeper-header {
@@ -1371,6 +1444,21 @@ body {
     background: #f0f0f0;
     border: 1px solid #ccc;
     border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.minesweeper-header button {
+    padding: 5px 15px;
+    background: white;
+    border: 1px solid #999;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.minesweeper-header select {
+    padding: 5px;
+    border: 1px solid #999;
+    border-radius: 3px;
 }
 
 #minesweeper-board {
@@ -1378,11 +1466,12 @@ body {
     gap: 1px;
     background: #999;
     border: 3px ridge #999;
+    margin: 0 auto;
 }
 
 .mine-cell {
-    width: 25px;
-    height: 25px;
+    width: 30px;
+    height: 30px;
     background: #c0c0c0;
     border: 2px outset #999;
     display: flex;
@@ -1578,6 +1667,65 @@ body.high-contrast .window-titlebar {
 body.no-animations * {
     animation: none !important;
     transition: none !important;
+}
+
+/* Wallpaper Preview */
+.wallpaper-preview {
+    width: 100%;
+    height: 120px;
+    border: 2px solid #999;
+    margin: 10px 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#wallpaper-options input[type="color"],
+#wallpaper-options input[type="text"],
+#wallpaper-options input[type="file"],
+#wallpaper-options select {
+    width: 100%;
+    padding: 5px;
+    margin-top: 5px;
+}
+
+.builtin-wallpaper-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.builtin-wallpaper-option {
+    border: 2px solid #999;
+    padding: 5px;
+    cursor: pointer;
+    text-align: center;
+    border-radius: 3px;
+}
+
+.builtin-wallpaper-option:hover {
+    border-color: #0066cc;
+    background: #e8f4ff;
+}
+
+.builtin-wallpaper-option.selected {
+    border-color: #0066cc;
+    background: #cce5ff;
+}
+
+.builtin-wallpaper-thumb {
+    width: 100%;
+    height: 60px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 2px;
+    margin-bottom: 5px;
+}
+
+.builtin-wallpaper-name {
+    font-size: 11px;
+    font-weight: bold;
 }
 
 /* Solitaire Styles */
