@@ -1533,6 +1533,59 @@ function addToFavorites() {
 // Initialize browser on page load
 function initializeBrowser() {
   proxyBrowser.showWelcomePage();
+  setupBrowserAddressBar();
+}
+
+// Address bar functionality
+function setupBrowserAddressBar() {
+  const addressBar = document.getElementById('browser-address');
+  const goButton = document.querySelector('.browser-toolbar button[title="Go"]');
+  
+  if (!addressBar) return;
+  
+  // Remove inline handler and add proper event listener
+  addressBar.removeAttribute('onkeypress');
+  
+  // Enter key to load URL
+  addressBar.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const url = addressBar.value.trim();
+      if (url) {
+        browserLoadURL(url);
+      }
+    }
+  });
+  
+  // Go button click (if not already handled)
+  if (goButton) {
+    const existingOnClick = goButton.getAttribute('onclick');
+    if (!existingOnClick || !existingOnClick.includes('browserLoadURL')) {
+      goButton.addEventListener('click', () => {
+        const url = addressBar.value.trim();
+        if (url) {
+          browserLoadURL(url);
+        }
+      });
+    }
+  }
+  
+  // Ctrl+L to focus address bar (like real browsers)
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'l') {
+      e.preventDefault();
+      const browserWindow = document.getElementById('browser-window');
+      // Only focus if browser window is visible
+      if (browserWindow && !browserWindow.classList.contains('hidden')) {
+        addressBar.focus();
+        addressBar.select();
+      }
+    }
+  });
+  
+  // Auto-select on focus
+  addressBar.addEventListener('focus', () => {
+    addressBar.select();
+  });
 }
 
 // Notepad Functions
