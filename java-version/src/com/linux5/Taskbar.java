@@ -69,7 +69,12 @@ public class Taskbar extends JPanel {
                 window.setVisible(false);
             } else {
                 window.setVisible(true);
-                window.toFront();
+                // Bring window to front by changing its layer
+                Container parent = window.getParent();
+                if (parent != null) {
+                    parent.setComponentZOrder(window, 0);
+                    parent.repaint();
+                }
             }
         });
         

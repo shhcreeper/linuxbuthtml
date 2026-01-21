@@ -116,7 +116,10 @@ public class Desktop extends JPanel {
         window.setLocation(100 + windows.size() * 30, 100 + windows.size() * 30);
         windows.add(window);
         add(window);
-        window.toFront();
+        
+        // Bring window to front by changing its layer
+        setComponentZOrder(window, 0);
+        
         taskbar.addWindowButton(window);
         revalidate();
         repaint();
