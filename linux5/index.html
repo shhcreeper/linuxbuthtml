@@ -1376,6 +1376,98 @@ Secondary Slave: None
         <div class="fm-context-menu-item" onclick="fmEmptyRecycleBin()">🗑️ Empty Recycle Bin</div>
     </div>
 
+    <!-- Task Manager Window -->
+    <div class="window" id="taskmanager-window">
+        <div class="window-titlebar">
+            <span class="window-title">Task Manager</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content" style="padding: 0;">
+            <div style="display: flex; border-bottom: 2px solid #ccc; background: #f0f0f0;">
+                <button class="tab-button active" onclick="switchTaskManagerTab('processes')" id="tab-processes">Processes</button>
+                <button class="tab-button" onclick="switchTaskManagerTab('performance')" id="tab-performance">Performance</button>
+                <button class="tab-button" onclick="switchTaskManagerTab('applications')" id="tab-applications">Applications</button>
+            </div>
+            
+            <!-- Processes Tab -->
+            <div id="taskmanager-processes" class="taskmanager-tab" style="display: block;">
+                <div style="padding: 10px;">
+                    <table class="taskmanager-table">
+                        <thead>
+                            <tr>
+                                <th>Image Name</th>
+                                <th>PID</th>
+                                <th>CPU</th>
+                                <th>Memory</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskmanager-processes-list">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Performance Tab -->
+            <div id="taskmanager-performance" class="taskmanager-tab" style="display: none;">
+                <div style="padding: 20px;">
+                    <h3>CPU Usage</h3>
+                    <div class="performance-graph">
+                        <canvas id="cpu-graph" width="500" height="150"></canvas>
+                    </div>
+                    <div style="margin-top: 10px;">CPU: <span id="cpu-percent">25</span>%</div>
+                    
+                    <h3 style="margin-top: 20px;">Memory Usage</h3>
+                    <div class="performance-graph">
+                        <canvas id="memory-graph" width="500" height="150"></canvas>
+                    </div>
+                    <div style="margin-top: 10px;">Memory: <span id="memory-usage">256</span> MB / 512 MB (<span id="memory-percent">50</span>%)</div>
+                </div>
+            </div>
+            
+            <!-- Applications Tab -->
+            <div id="taskmanager-applications" class="taskmanager-tab" style="display: none;">
+                <div style="padding: 10px;">
+                    <table class="taskmanager-table">
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskmanager-applications-list">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Prompt Window -->
+    <div class="window" id="cmd-window">
+        <div class="window-titlebar">
+            <span class="window-title">Command Prompt</span>
+            <div class="window-controls">
+                <button class="window-btn minimize">_</button>
+                <button class="window-btn maximize">□</button>
+                <button class="window-btn close">✕</button>
+            </div>
+        </div>
+        <div class="window-content" style="padding: 0; background: #000; color: #fff; font-family: 'Courier New', monospace; height: calc(100% - 30px);">
+            <div id="cmd-output" style="padding: 10px; height: calc(100% - 40px); overflow-y: auto; white-space: pre-wrap;"></div>
+            <div style="display: flex; padding: 5px; background: #000; border-top: 1px solid #333;">
+                <span style="color: #0f0; margin-right: 5px;">C:\></span>
+                <input type="text" id="cmd-input" style="flex: 1; background: #000; color: #fff; border: none; outline: none; font-family: 'Courier New', monospace;" onkeypress="if(event.key==='Enter') executeCmdCommand()" />
+            </div>
+        </div>
+    </div>
+
     <!-- Taskbar -->
     <div id="taskbar">
         <button id="start-button">
@@ -1411,6 +1503,7 @@ Secondary Slave: None
                         <div class="start-menu-item" data-window="games">🎮 Games</div>
                         <div class="start-menu-item" data-window="calculator">🔢 Calculator</div>
                         <div class="start-menu-item" data-window="paint">🎨 Paint</div>
+                        <div class="start-menu-item" data-window="cmd-window">⌨️ Command Prompt</div>
                     </div>
                 </div>
             </div>
@@ -1418,6 +1511,7 @@ Secondary Slave: None
             <div class="start-menu-section">
                 <div class="start-menu-item" data-window="mydocuments">📁 My Documents</div>
                 <div class="start-menu-item" data-window="filemanager">💻 My Computer</div>
+                <div class="start-menu-item" data-window="taskmanager-window">📊 Task Manager</div>
                 <div class="start-menu-item" data-window="settings">⚙️ Control Panel</div>
                 <div class="start-menu-item" data-window="search">🔍 Search</div>
                 <div class="start-menu-item" data-window="help">❓ Help and Support</div>

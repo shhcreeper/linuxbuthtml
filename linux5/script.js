@@ -404,7 +404,9 @@ function openWindow(windowId) {
             'pinball-window': { width: 500, height: 750 },
             'tictactoe-window': { width: 450, height: 600 },
             'help-window': { width: 600, height: 500 },
-            'about-window': { width: 500, height: 400 }
+            'about-window': { width: 500, height: 400 },
+            'taskmanager-window': { width: 650, height: 550 },
+            'cmd-window': { width: 700, height: 500 }
         };
         
         // Get size for this window type, default to 800x600
@@ -5210,3 +5212,315 @@ function initializeBrowserEnhancements() {
   setupBrowserAddressBar();
   setupBrowserKeyboardShortcuts();
 }
+
+// ===== TASK MANAGER =====
+let taskManagerProcesses = [
+    { name: 'System', pid: 4, cpu: 0, memory: 128 },
+    { name: 'explorer.exe', pid: 1234, cpu: 2, memory: 45 },
+    { name: 'chrome.exe', pid: 2456, cpu: 15, memory: 234 },
+    { name: 'node.exe', pid: 3678, cpu: 5, memory: 89 },
+    { name: 'vscode.exe', pid: 4890, cpu: 8, memory: 156 },
+];
+
+let taskManagerUpdateInterval = null;
+let cpuHistory = [];
+let memoryHistory = [];
+
+function initializeTaskManager() {
+    updateTaskManagerProcesses();
+    updateTaskManagerApplications();
+    initializePerformanceGraphs();
+    
+    // Update every 2 seconds
+    if (taskManagerUpdateInterval) clearInterval(taskManagerUpdateInterval);
+    taskManagerUpdateInterval = setInterval(() => {
+        updateTaskManagerData();
+        updateTaskManagerProcesses();
+        updateTaskManagerApplications();
+        updatePerformanceGraphs();
+    }, 2000);
+}
+
+function updateTaskManagerData() {
+    // Simulate random CPU/memory fluctuations
+    taskManagerProcesses.forEach(proc => {
+        proc.cpu = Math.max(0, Math.min(100, proc.cpu + (Math.random() - 0.5) * 10));
+        proc.memory = Math.max(10, Math.min(500, proc.memory + (Math.random() - 0.5) * 20));
+    });
+}
+
+function updateTaskManagerProcesses() {
+    const tbody = document.getElementById('taskmanager-processes-list');
+    if (!tbody) return;
+    
+    tbody.innerHTML = taskManagerProcesses.map(proc => `
+        <tr>
+            <td>${proc.name}</td>
+            <td>${proc.pid}</td>
+            <td>${Math.round(proc.cpu)}%</td>
+            <td>${Math.round(proc.memory)} MB</td>
+            <td><button onclick="endTaskManagerProcess(${proc.pid})" style="padding: 2px 10px;">End Process</button></td>
+        </tr>
+    `).join('');
+}
+
+function updateTaskManagerApplications() {
+    const tbody = document.getElementById('taskmanager-applications-list');
+    if (!tbody) return;
+    
+    const windows = document.querySelectorAll('.window.active');
+    const apps = Array.from(windows).map(win => ({
+        name: win.querySelector('.window-title')?.textContent || 'Unknown',
+        status: 'Running'
+    }));
+    
+    tbody.innerHTML = apps.map(app => `
+        <tr>
+            <td>${app.name}</td>
+            <td>${app.status}</td>
+            <td><button onclick="alert('Switch to functionality not implemented')" style="padding: 2px 10px;">Switch To</button></td>
+        </tr>
+    `).join('');
+}
+
+function endTaskManagerProcess(pid) {
+    const index = taskManagerProcesses.findIndex(p => p.pid === pid);
+    if (index > -1 && taskManagerProcesses[index].name !== 'System') {
+        taskManagerProcesses.splice(index, 1);
+        updateTaskManagerProcesses();
+        showCatMessage(`Process ${pid} terminated! 💀`);
+    } else {
+        showCatMessage('Cannot terminate system process!');
+    }
+}
+
+function switchTaskManagerTab(tab) {
+    // Hide all tabs
+    document.querySelectorAll('.taskmanager-tab').forEach(t => t.style.display = 'none');
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    
+    // Show selected tab
+    document.getElementById(`taskmanager-${tab}`).style.display = 'block';
+    document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+function initializePerformanceGraphs() {
+    cpuHistory = new Array(50).fill(25);
+    memoryHistory = new Array(50).fill(50);
+    updatePerformanceGraphs();
+}
+
+function updatePerformanceGraphs() {
+    // Update CPU
+    const cpuPercent = Math.round(taskManagerProcesses.reduce((sum, p) => sum + p.cpu, 0) / taskManagerProcesses.length);
+    cpuHistory.push(cpuPercent);
+    if (cpuHistory.length > 50) cpuHistory.shift();
+    document.getElementById('cpu-percent').textContent = cpuPercent;
+    
+    // Update Memory
+    const memoryUsed = Math.round(taskManagerProcesses.reduce((sum, p) => sum + p.memory, 0));
+    const memoryPercent = Math.round((memoryUsed / 512) * 100);
+    memoryHistory.push(memoryPercent);
+    if (memoryHistory.length > 50) memoryHistory.shift();
+    document.getElementById('memory-usage').textContent = memoryUsed;
+    document.getElementById('memory-percent').textContent = memoryPercent;
+    
+    // Draw graphs
+    drawPerformanceGraph('cpu-graph', cpuHistory, '#0f0');
+    drawPerformanceGraph('memory-graph', memoryHistory, '#00f');
+}
+
+function drawPerformanceGraph(canvasId, data, color) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw grid
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+        const y = (i / 5) * height;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    // Draw data
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    data.forEach((value, i) => {
+        const x = (i / (data.length - 1)) * width;
+        const y = height - (value / 100) * height;
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+    ctx.stroke();
+}
+
+// Initialize Task Manager when window opens
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.target.id === 'taskmanager-window' && 
+                mutation.target.classList.contains('active')) {
+                initializeTaskManager();
+            }
+        });
+    });
+    
+    const taskmanagerWindow = document.getElementById('taskmanager-window');
+    if (taskmanagerWindow) {
+        observer.observe(taskmanagerWindow, { attributes: true, attributeFilter: ['class'] });
+    }
+});
+
+// ===== COMMAND PROMPT =====
+let cmdHistory = [];
+let cmdHistoryIndex = -1;
+
+const cmdCommands = {
+    'help': () => `Available commands:
+  help     - Display this help message
+  dir      - List directory contents
+  cd       - Change directory
+  cls      - Clear screen
+  echo     - Display a message
+  ver      - Display version
+  date     - Display current date
+  time     - Display current time
+  whoami   - Display current user
+  ipconfig - Display network configuration
+  ping     - Ping a host
+  tree     - Display directory tree
+  exit     - Close command prompt`,
+    
+    'dir': () => `Volume in drive C is Linux5
+ Directory of C:\\Users\\Guest
+
+01/21/2026  01:00 PM    <DIR>          .
+01/21/2026  01:00 PM    <DIR>          ..
+01/15/2026  03:30 PM    <DIR>          Documents
+01/18/2026  10:15 AM    <DIR>          Downloads
+01/20/2026  09:45 AM    <DIR>          Pictures
+01/19/2026  02:20 PM    <DIR>          Desktop
+               0 File(s)              0 bytes
+               6 Dir(s)  50,123,456,789 bytes free`,
+    
+    'cd': (args) => args.length > 0 ? `Changed directory to: ${args[0]}` : 'C:\\Users\\Guest',
+    'cls': () => { document.getElementById('cmd-output').innerHTML = ''; return ''; },
+    'echo': (args) => args.join(' '),
+    'ver': () => 'Linux/5 [Version 5.0.2026]',
+    'date': () => new Date().toLocaleDateString(),
+    'time': () => new Date().toLocaleTimeString(),
+    'whoami': () => 'LINUX5\\Guest',
+    'ipconfig': () => `Windows IP Configuration
+
+Ethernet adapter Local Area Connection:
+   Connection-specific DNS Suffix  . : 
+   IPv4 Address. . . . . . . . . . . : 192.168.1.100
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 192.168.1.1`,
+    'ping': (args) => args.length > 0 ? 
+        `Pinging ${args[0]} with 32 bytes of data:
+Reply from ${args[0]}: bytes=32 time=15ms TTL=64
+Reply from ${args[0]}: bytes=32 time=14ms TTL=64
+Reply from ${args[0]}: bytes=32 time=16ms TTL=64
+Reply from ${args[0]}: bytes=32 time=15ms TTL=64
+
+Ping statistics for ${args[0]}:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)` : 'Usage: ping <hostname>',
+    'tree': () => `C:\\Users\\Guest
+├── Documents
+│   ├── Work
+│   └── Personal
+├── Downloads
+├── Pictures
+│   ├── Vacation
+│   └── Family
+└── Desktop`,
+    'exit': () => { closeWindow(document.getElementById('cmd-window')); return ''; }
+};
+
+function executeCmdCommand() {
+    const input = document.getElementById('cmd-input');
+    const output = document.getElementById('cmd-output');
+    const command = input.value.trim();
+    
+    if (!command) return;
+    
+    // Add to history
+    cmdHistory.push(command);
+    cmdHistoryIndex = cmdHistory.length;
+    
+    // Display command
+    output.innerHTML += `<div class="cmd-line"><span class="cmd-prompt">C:\\></span> ${command}</div>`;
+    
+    // Parse command
+    const parts = command.split(' ');
+    const cmd = parts[0].toLowerCase();
+    const args = parts.slice(1);
+    
+    // Execute command
+    let result = '';
+    if (cmdCommands[cmd]) {
+        result = cmdCommands[cmd](args);
+    } else {
+        result = `<span class="cmd-error">'${cmd}' is not recognized as an internal or external command.</span>`;
+    }
+    
+    if (result) {
+        output.innerHTML += `<div class="cmd-line">${result}</div>`;
+    }
+    
+    // Clear input and scroll to bottom
+    input.value = '';
+    output.scrollTop = output.scrollHeight;
+}
+
+// Initialize Command Prompt
+document.addEventListener('DOMContentLoaded', () => {
+    const cmdInput = document.getElementById('cmd-input');
+    if (cmdInput) {
+        cmdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (cmdHistoryIndex > 0) {
+                    cmdHistoryIndex--;
+                    cmdInput.value = cmdHistory[cmdHistoryIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (cmdHistoryIndex < cmdHistory.length - 1) {
+                    cmdHistoryIndex++;
+                    cmdInput.value = cmdHistory[cmdHistoryIndex];
+                } else {
+                    cmdHistoryIndex = cmdHistory.length;
+                    cmdInput.value = '';
+                }
+            }
+        });
+        
+        // Show welcome message
+        const cmdOutput = document.getElementById('cmd-output');
+        if (cmdOutput) {
+            cmdOutput.innerHTML = `Linux/5 Command Prompt [Version 5.0.2026]
+(c) 2026 Linux/5 Corporation. All rights reserved.
+
+Type 'help' for a list of commands.
+
+`;
+        }
+    }
+});

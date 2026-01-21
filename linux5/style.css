@@ -2211,3 +2211,84 @@ body.theme-win11 .start-menu {
         transform: translateX(-50%) translateY(0);
     }
 }
+
+/* Task Manager Styles */
+.taskmanager-tab {
+    padding: 10px;
+}
+
+.taskmanager-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.taskmanager-table th {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+    font-weight: bold;
+}
+
+.taskmanager-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.taskmanager-table tr:hover {
+    background: #f5f5f5;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background: #e0e0e0;
+    border: none;
+    border-right: 1px solid #ccc;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.tab-button.active {
+    background: #fff;
+    border-bottom: 2px solid #0066cc;
+    font-weight: bold;
+}
+
+.tab-button:hover:not(.active) {
+    background: #d0d0d0;
+}
+
+.performance-graph {
+    background: #000;
+    padding: 10px;
+    border-radius: 3px;
+    margin: 10px 0;
+}
+
+.performance-graph canvas {
+    display: block;
+}
+
+/* Command Prompt Styles */
+#cmd-output {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+#cmd-input {
+    font-size: 14px;
+}
+
+.cmd-line {
+    margin: 2px 0;
+}
+
+.cmd-prompt {
+    color: #0f0;
+    font-weight: bold;
+}
+
+.cmd-error {
+    color: #f00;
+}
