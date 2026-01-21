@@ -232,26 +232,18 @@ Secondary Slave: None
                 <button class="browser-btn" onclick="browserHome()" title="Home">🏠</button>
                 <div class="browser-address-bar">
                     <span class="address-label">Address</span>
-                    <input type="text" id="browser-url" placeholder="http://" value="http://welcome.linux5.local" onkeypress="if(event.key==='Enter') browserGo()" />
+                    <input type="text" id="browser-address" placeholder="Enter URL..." onkeypress="if(event.key==='Enter') browserLoadURL(this.value)" />
                 </div>
-                <button class="browser-btn" onclick="browserGo()" title="Go">Go</button>
+                <button class="browser-btn" onclick="browserLoadURL(document.getElementById('browser-address').value)" title="Go">Go</button>
                 <button class="browser-btn" onclick="addToFavorites()" title="Add to Favorites">⭐</button>
             </div>
             <div id="browser-loading" class="browser-loading hidden">
-                <div class="loading-bar"></div>
+                Loading... <span id="browser-status-msg"></span>
             </div>
-            <div id="browser-content" class="browser-viewport">
-                <h1>Welcome to Internet Explorer!</h1>
-                <p>Enter a URL in the address bar to browse the web, or try these bookmarks:</p>
-                <ul>
-                    <li><a href="#" onclick="browserLoadURL('https://example.com'); return false;">Example.com</a></li>
-                    <li><a href="#" onclick="browserLoadURL('https://www.google.com'); return false;">Google</a></li>
-                    <li><a href="#" onclick="browserLoadURL('https://www.wikipedia.org'); return false;">Wikipedia</a></li>
-                </ul>
-                <p style="margin-top: 20px; font-size: 12px; color: #666;">
-                    <strong>Note:</strong> This browser uses a web proxy to load real websites. Some sites may not load properly due to CORS restrictions.
-                </p>
-            </div>
+            <iframe id="browser-iframe" 
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                    style="width: 100%; height: calc(100% - 100px); border: none; background: white;">
+            </iframe>
             <div class="browser-statusbar">
                 <span id="browser-status">Done</span>
             </div>
