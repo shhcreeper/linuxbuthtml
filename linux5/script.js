@@ -3370,27 +3370,46 @@ function applyAccessibilitySettings() {
 }
 
 // Cat Settings
+// Cat size options
+const catSizeOptions = {
+    tiny: { width: 48, height: 48 },
+    small: { width: 80, height: 80 },
+    medium: { width: 128, height: 128 },
+    large: { width: 200, height: 200 }
+};
+
 function loadCatSettings() {
     const enabled = localStorage.getItem('catEnabled') !== 'false';
     const name = localStorage.getItem('catName') || 'Buddy';
     const autoSpeak = localStorage.getItem('catAutoSpeak') !== 'false';
     const frequency = localStorage.getItem('catFrequency') || '60';
     const mood = localStorage.getItem('catMood') || 'playful';
+    const size = localStorage.getItem('catSize') || 'small';
     
     const enabledCheckbox = document.getElementById('cat-enabled');
     const nameInput = document.getElementById('cat-name');
     const autoSpeakCheckbox = document.getElementById('cat-auto-speak');
     const frequencySelect = document.getElementById('cat-frequency');
     const moodSelect = document.getElementById('cat-mood');
+    const sizeSelect = document.getElementById('cat-size');
     
     if (enabledCheckbox) enabledCheckbox.checked = enabled;
     if (nameInput) nameInput.value = name;
     if (autoSpeakCheckbox) autoSpeakCheckbox.checked = autoSpeak;
     if (frequencySelect) frequencySelect.value = frequency;
     if (moodSelect) moodSelect.value = mood;
+    if (sizeSelect) sizeSelect.value = size;
     
     const cat = document.getElementById('cat-pet');
-    if (cat) cat.style.display = enabled ? 'block' : 'none';
+    if (cat) {
+        cat.style.display = enabled ? 'block' : 'none';
+        // Apply saved size
+        const sizeOption = catSizeOptions[size];
+        if (sizeOption) {
+            cat.style.width = sizeOption.width + 'px';
+            cat.style.height = sizeOption.height + 'px';
+        }
+    }
 }
 
 function applyCatSettings() {
@@ -3399,15 +3418,25 @@ function applyCatSettings() {
     const autoSpeak = document.getElementById('cat-auto-speak').checked;
     const frequency = document.getElementById('cat-frequency').value;
     const mood = document.getElementById('cat-mood').value;
+    const size = document.getElementById('cat-size').value;
     
     localStorage.setItem('catEnabled', enabled.toString());
     localStorage.setItem('catName', name);
     localStorage.setItem('catAutoSpeak', autoSpeak.toString());
     localStorage.setItem('catFrequency', frequency);
     localStorage.setItem('catMood', mood);
+    localStorage.setItem('catSize', size);
     
     const cat = document.getElementById('cat-pet');
-    if (cat) cat.style.display = enabled ? 'block' : 'none';
+    if (cat) {
+        cat.style.display = enabled ? 'block' : 'none';
+        // Apply selected size
+        const sizeOption = catSizeOptions[size];
+        if (sizeOption) {
+            cat.style.width = sizeOption.width + 'px';
+            cat.style.height = sizeOption.height + 'px';
+        }
+    }
     
     showCatMessage(`Settings applied! I'm ${name} the ${mood} cat! 🐱`);
 }

@@ -655,12 +655,12 @@ body {
 /* Black Cat Pet */
 #cat-pet {
     position: fixed;
-    bottom: 100px;
-    right: 100px;
-    width: 256px;
-    height: 256px;
+    bottom: 60px;
+    right: 20px;
+    width: 80px !important;
+    height: 80px !important;
     cursor: grab;
-    z-index: 500;
+    z-index: 9999;
     transition: transform 0.3s ease;
 }
 

@@ -1037,6 +1037,13 @@ Secondary Slave: None
             <h2>Cat Assistant Settings</h2>
             <h3>Appearance</h3>
             <label><input type="checkbox" id="cat-enabled" checked onchange="applyCatSettings()"> Show Cat Assistant</label><br/>
+            <h3 style="margin-top: 15px;">Cat Size</h3>
+            <select id="cat-size" onchange="applyCatSettings()">
+                <option value="tiny">Tiny (48px) - Minimal desktop buddy</option>
+                <option value="small" selected>Small (80px) - Default</option>
+                <option value="medium">Medium (128px)</option>
+                <option value="large">Large (200px)</option>
+            </select>
             <h3 style="margin-top: 15px;">Name</h3>
             <input type="text" id="cat-name" value="Buddy" style="width: 100%; padding: 5px;" onchange="applyCatSettings()" />
             <h3 style="margin-top: 15px;">Behavior</h3>
