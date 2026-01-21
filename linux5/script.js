@@ -1004,7 +1004,7 @@ class WorkingProxyBrowser {
     const addressBar = document.getElementById('browser-address');
     const url = addressBar ? addressBar.value : '';
     
-    if (!url || url === '') {
+    if (!url) {
       alert('No page loaded to add to favorites.');
       return;
     }
@@ -1224,6 +1224,14 @@ class WorkingProxyBrowser {
   }
   
   showErrorPage(failedURL) {
+    // HTML escape the URL to prevent XSS
+    const escapedURL = failedURL
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+    
     const errorHTML = `
       <!DOCTYPE html>
       <html>
@@ -1296,7 +1304,7 @@ class WorkingProxyBrowser {
         <div class="error-container">
           <h1>🚫</h1>
           <h2>Unable to Load Page</h2>
-          <div class="url-box">${failedURL}</div>
+          <div class="url-box">${escapedURL}</div>
           
           <p><strong>This page couldn't be loaded through any available proxy.</strong></p>
           
@@ -1319,7 +1327,7 @@ class WorkingProxyBrowser {
           
           <p style="margin-top: 30px;">
             <button onclick="parent.browserRetry()">🔄 Try Again</button>
-            <button onclick="window.open('${failedURL}', '_blank')">🔗 Open in Real Browser</button>
+            <button onclick="window.open('${escapedURL}', '_blank')">🔗 Open in Real Browser</button>
           </p>
         </div>
       </body>
