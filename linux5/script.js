@@ -4265,23 +4265,78 @@ function snakeUpdate() {
 function snakeDraw() {
     const ctx = snakeState.ctx;
     const gs = snakeState.gridSize;
+    const canvas = snakeState.canvas;
+    const tileCount = canvas.width / gs;
     
-    // Clear canvas
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, snakeState.canvas.width, snakeState.canvas.height);
+    // Gradient background
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw snake
-    ctx.fillStyle = '#0f0';
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= tileCount; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * gs, 0);
+        ctx.lineTo(i * gs, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * gs);
+        ctx.lineTo(canvas.width, i * gs);
+        ctx.stroke();
+    }
+    
+    // Draw snake with gradient
     snakeState.snake.forEach((seg, i) => {
-        ctx.fillRect(seg.x * gs, seg.y * gs, gs - 2, gs - 2);
-        if (i === 0) {
-            ctx.fillStyle = '#0f0';
-        }
+        const segGradient = ctx.createRadialGradient(
+            seg.x * gs + gs/2,
+            seg.y * gs + gs/2,
+            0,
+            seg.x * gs + gs/2,
+            seg.y * gs + gs/2,
+            gs
+        );
+        segGradient.addColorStop(0, i === 0 ? '#4eff4e' : '#0f0');
+        segGradient.addColorStop(1, i === 0 ? '#00cc00' : '#0a0');
+        ctx.fillStyle = segGradient;
+        ctx.fillRect(
+            seg.x * gs + 1,
+            seg.y * gs + 1,
+            gs - 2,
+            gs - 2
+        );
     });
     
-    // Draw food
-    ctx.fillStyle = '#f00';
-    ctx.fillRect(snakeState.food.x * gs, snakeState.food.y * gs, gs - 2, gs - 2);
+    // Draw food with pulsing animation
+    const pulse = Math.sin(Date.now() / 200) * 2 + gs - 2;
+    const foodGradient = ctx.createRadialGradient(
+        snakeState.food.x * gs + gs/2,
+        snakeState.food.y * gs + gs/2,
+        0,
+        snakeState.food.x * gs + gs/2,
+        snakeState.food.y * gs + gs/2,
+        pulse/2
+    );
+    foodGradient.addColorStop(0, '#ff4444');
+    foodGradient.addColorStop(1, '#cc0000');
+    ctx.fillStyle = foodGradient;
+    ctx.fillRect(
+        snakeState.food.x * gs + (gs - pulse)/2,
+        snakeState.food.y * gs + (gs - pulse)/2,
+        pulse,
+        pulse
+    );
+    
+    // Polished score display
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(5, 5, 150, 40);
+    ctx.fillStyle = '#4eff4e';
+    ctx.font = 'bold 20px "Courier New"';
+    ctx.textAlign = 'left';
+    ctx.fillText('SCORE: ' + snakeState.score, 15, 30);
 }
 
 function snakeGameOver() {

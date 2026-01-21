@@ -1755,7 +1755,7 @@ body.no-animations * {
 
 #solitaire-board {
     min-height: 500px;
-    background: #0a7029;
+    background: linear-gradient(135deg, #0a4d0a 0%, #0d6e0d 100%);
     padding: 20px;
     border-radius: 5px;
     position: relative;
@@ -1763,25 +1763,31 @@ body.no-animations * {
 
 .solitaire-pile {
     position: absolute;
-    width: 80px;
-    min-height: 110px;
+    width: 71px;
+    min-height: 96px;
     border: 2px dashed rgba(255,255,255,0.3);
     border-radius: 5px;
 }
 
 .solitaire-card {
-    width: 80px;
-    height: 110px;
+    width: 71px;
+    height: 96px;
     background: white;
-    border: 2px solid #000;
+    border: 1px solid #000;
     border-radius: 5px;
     position: absolute;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     padding: 5px;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     user-select: none;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.solitaire-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 2px 5px 8px rgba(0,0,0,0.4);
 }
 
 .solitaire-card.red {
@@ -1793,17 +1799,29 @@ body.no-animations * {
 }
 
 .solitaire-card.facedown {
-    background: linear-gradient(135deg, #0066cc 25%, #0044aa 25%, #0044aa 50%, #0066cc 50%, #0066cc 75%, #0044aa 75%);
-    background-size: 20px 20px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    background-image: 
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(255,255,255,.1) 10px,
+            rgba(255,255,255,.1) 20px
+        );
+}
+
+.solitaire-card.dragging {
+    opacity: 0.5;
+    z-index: 1000;
 }
 
 .solitaire-card-value {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
 }
 
 .solitaire-card-suit {
-    font-size: 20px;
+    font-size: 36px;
     text-align: center;
     flex: 1;
     display: flex;
