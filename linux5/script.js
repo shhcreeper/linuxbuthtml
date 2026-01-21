@@ -424,6 +424,11 @@ function openWindow(windowId) {
         renderFileManager();
     } else if (windowId === 'calendar-window') {
         displayCalendar();
+    } else if (windowId === 'browser-window') {
+        // Initialize browser enhancements with a small delay to ensure DOM is ready
+        setTimeout(() => {
+            initializeBrowserEnhancements();
+        }, 100);
     }
 }
 
@@ -5090,4 +5095,63 @@ function applyRegionalSettings() {
     localStorage.setItem('regionalCurrencyPosition', currencyPosition);
     
     showCatMessage('Regional settings applied! 🌍');
+}
+
+// Enhanced Browser Address Bar Setup
+function setupBrowserAddressBar() {
+  const addressBar = document.getElementById('browser-address');
+  
+  if (!addressBar) {
+    console.error('Address bar not found!');
+    return;
+  }
+  
+  // Remove any existing event listeners by cloning the element
+  const newAddressBar = addressBar.cloneNode(true);
+  addressBar.parentNode.replaceChild(newAddressBar, addressBar);
+  
+  // Handle Enter key
+  newAddressBar.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      e.preventDefault();
+      const url = this.value.trim();
+      if (url) {
+        browserLoadURL(url);
+      }
+    }
+  });
+  
+  // Handle input changes for live feedback
+  newAddressBar.addEventListener('input', function(e) {
+    // Optional: Could add URL suggestions here in the future
+  });
+  
+  console.log('Browser address bar setup complete');
+}
+
+// Global keyboard shortcut handler for browser
+function setupBrowserKeyboardShortcuts() {
+  document.addEventListener('keydown', function(e) {
+    // Check if browser window is active
+    const browserWindow = document.getElementById('browser-window');
+    if (!browserWindow || browserWindow.style.display === 'none') {
+      return;
+    }
+    
+    // Ctrl+L to focus address bar
+    if (e.ctrlKey && e.key === 'l') {
+      e.preventDefault();
+      const addressBar = document.getElementById('browser-address');
+      if (addressBar) {
+        addressBar.focus();
+        addressBar.select();
+      }
+    }
+  });
+}
+
+// Initialize browser enhancements when browser window opens
+function initializeBrowserEnhancements() {
+  setupBrowserAddressBar();
+  setupBrowserKeyboardShortcuts();
 }
