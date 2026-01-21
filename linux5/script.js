@@ -779,7 +779,10 @@ function sendCatMessage() {
     
     // Show user message
     const userMsg = document.createElement('p');
-    userMsg.innerHTML = `<b>You:</b> ${input.value}`;
+    const userLabel = document.createElement('b');
+    userLabel.textContent = 'You:';
+    userMsg.appendChild(userLabel);
+    userMsg.appendChild(document.createTextNode(' ' + input.value));
     userMsg.style.marginBottom = '10px';
     messages.appendChild(userMsg);
     
@@ -800,7 +803,10 @@ function sendCatMessage() {
         // Remove typing, show response
         typing.remove();
         const catMsg = document.createElement('p');
-        catMsg.innerHTML = `<b>Cat:</b> ${reply}`;
+        const catLabel = document.createElement('b');
+        catLabel.textContent = 'Cat:';
+        catMsg.appendChild(catLabel);
+        catMsg.appendChild(document.createTextNode(' ' + reply));
         catMsg.style.marginBottom = '10px';
         messages.appendChild(catMsg);
         messages.scrollTop = messages.scrollHeight;
