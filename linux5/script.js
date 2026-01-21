@@ -763,7 +763,6 @@ function openCatChat() {
     `;
     
     document.body.appendChild(chatWindow);
-    makeDraggable(chatWindow);
     openWindow('cat-chat-window');
     
     // Focus input
