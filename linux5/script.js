@@ -1145,6 +1145,7 @@ function processProxiedHTML(html, originalURL) {
             html = '<!DOCTYPE html>\n' + html;
         }
         
+        // Only add HTML wrapper if there's no HTML tag
         if (!html.toLowerCase().includes('<html')) {
             html = '<!DOCTYPE html>\n<html>\n<head></head>\n<body>\n' + html + '\n</body>\n</html>';
         }
@@ -1173,11 +1174,6 @@ function processProxiedHTML(html, originalURL) {
                     color: #000;
                     font-family: Arial, sans-serif;
                     font-size: 14px;
-                }
-                /* Ensure visibility */
-                * {
-                    visibility: visible !important;
-                    opacity: 1 !important;
                 }
             </style>
         `;
@@ -1218,9 +1214,9 @@ function processProxiedHTML(html, originalURL) {
         html = html.replace(/if\s*\(\s*parent\s*!==?\s*self\s*\)/gi, 'if(false)');
         html = html.replace(/if\s*\(\s*self\s*!==?\s*top\s*\)/gi, 'if(false)');
         html = html.replace(/if\s*\(\s*top\s*!==?\s*window\s*\)/gi, 'if(false)');
-        html = html.replace(/top\.location\s*=/gi, 'void 0;');
-        html = html.replace(/parent\.location\s*=/gi, 'void 0;');
-        html = html.replace(/window\.top\.location\s*=/gi, 'void 0;');
+        html = html.replace(/top\.location\s*=/gi, '// top.location=');
+        html = html.replace(/parent\.location\s*=/gi, '// parent.location=');
+        html = html.replace(/window\.top\.location\s*=/gi, '// window.top.location=');
         
         // Remove X-Frame-Options detection
         html = html.replace(/['"]X-Frame-Options['"]/gi, '"X-Disabled-Header"');
