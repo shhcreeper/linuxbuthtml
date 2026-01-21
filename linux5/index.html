@@ -460,14 +460,18 @@ Secondary Slave: None
         </div>
         <div class="window-content minesweeper-content">
             <div class="minesweeper-header">
-                <button onclick="minesweeperNew()">New Game</button>
+                <div class="mine-counter">
+                    <span id="minesweeper-mines">010</span>
+                </div>
+                <button onclick="minesweeperNew()">😊 New Game</button>
                 <select id="minesweeper-difficulty" onchange="minesweeperChangeDifficulty()">
-                    <option value="beginner">Beginner (8x8)</option>
-                    <option value="intermediate">Intermediate (16x16)</option>
-                    <option value="expert">Expert (30x16)</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="expert">Expert</option>
                 </select>
-                <span>Mines: <span id="minesweeper-mines">10</span></span>
-                <span>Time: <span id="minesweeper-time">0</span>s</span>
+                <div class="mine-timer">
+                    <span id="minesweeper-time">000</span>
+                </div>
             </div>
             <div id="minesweeper-board"></div>
         </div>
