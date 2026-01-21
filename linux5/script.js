@@ -4313,23 +4313,75 @@ function snakeUpdate() {
 function snakeDraw() {
     const ctx = snakeState.ctx;
     const gs = snakeState.gridSize;
+    const width = snakeState.canvas.width;
+    const height = snakeState.canvas.height;
     
-    // Clear canvas
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, snakeState.canvas.width, snakeState.canvas.height);
+    // Gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
     
-    // Draw snake
-    ctx.fillStyle = '#0f0';
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= width; x += gs) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += gs) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    // Draw snake with glowing effect
     snakeState.snake.forEach((seg, i) => {
-        ctx.fillRect(seg.x * gs, seg.y * gs, gs - 2, gs - 2);
+        const x = seg.x * gs;
+        const y = seg.y * gs;
+        const centerX = x + gs / 2;
+        const centerY = y + gs / 2;
+        
+        const segGradient = ctx.createRadialGradient(
+            centerX, centerY, 0,
+            centerX, centerY, gs
+        );
+        
         if (i === 0) {
-            ctx.fillStyle = '#0f0';
+            // Head - cyan glow
+            segGradient.addColorStop(0, '#0ff');
+            segGradient.addColorStop(1, '#0aa');
+        } else {
+            // Body - green glow
+            segGradient.addColorStop(0, '#0f0');
+            segGradient.addColorStop(1, '#0a0');
         }
+        
+        ctx.fillStyle = segGradient;
+        ctx.fillRect(x + 1, y + 1, gs - 2, gs - 2);
     });
     
-    // Draw food
-    ctx.fillStyle = '#f00';
-    ctx.fillRect(snakeState.food.x * gs, snakeState.food.y * gs, gs - 2, gs - 2);
+    // Draw food with pulsing effect
+    const pulse = Math.sin(Date.now() / 200) * 0.2 + 0.8;
+    const foodX = snakeState.food.x * gs;
+    const foodY = snakeState.food.y * gs;
+    const foodCenterX = foodX + gs / 2;
+    const foodCenterY = foodY + gs / 2;
+    
+    ctx.fillStyle = `rgba(255, 0, 0, ${pulse})`;
+    ctx.beginPath();
+    ctx.arc(
+        foodCenterX,
+        foodCenterY,
+        (gs / 2 - 1) * pulse,
+        0,
+        Math.PI * 2
+    );
+    ctx.fill();
 }
 
 function snakeGameOver() {
@@ -4593,8 +4645,25 @@ function tetrisDraw() {
         }
     }
     
-    // Draw current piece
+    // Draw ghost piece (shows where piece will land)
     const piece = tetrisState.currentPiece;
+    let ghostY = piece.y;
+    while (!tetrisCheckCollision({ ...piece, y: ghostY + 1 })) {
+        ghostY++;
+    }
+    
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = piece.color;
+    for (let y = 0; y < piece.shape.length; y++) {
+        for (let x = 0; x < piece.shape[y].length; x++) {
+            if (piece.shape[y][x]) {
+                ctx.fillRect((piece.x + x) * bs, (ghostY + y) * bs, bs - 1, bs - 1);
+            }
+        }
+    }
+    ctx.globalAlpha = 1.0;
+    
+    // Draw current piece
     ctx.fillStyle = piece.color;
     for (let y = 0; y < piece.shape.length; y++) {
         for (let x = 0; x < piece.shape[y].length; x++) {
