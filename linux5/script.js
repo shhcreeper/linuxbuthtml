@@ -1215,9 +1215,9 @@ function displayContentInIframe(html, container) {
         const blobUrl = URL.createObjectURL(blob);
         iframe.src = blobUrl;
         
-        // Clean up blob URL after load
+        // Clean up blob URL after a delay to ensure all resources load
         iframe.onload = () => {
-            URL.revokeObjectURL(blobUrl);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
         };
         return true;
     } catch (e) {

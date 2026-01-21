@@ -673,9 +673,10 @@ body {
     width: 100%;
     height: 100%;
     /* CRITICAL: Keep pixels sharp, no blur - for high quality rendering */
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-    -ms-interpolation-mode: nearest-neighbor;
+    /* Multiple declarations for browser compatibility: */
+    image-rendering: pixelated;      /* Modern browsers (Chrome, Firefox) */
+    image-rendering: crisp-edges;    /* Fallback for Safari */
+    -ms-interpolation-mode: nearest-neighbor;  /* IE/Edge legacy */
     /* Ensure no smoothing */
     shape-rendering: crispEdges;
 }
