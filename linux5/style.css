@@ -657,8 +657,8 @@ body {
     position: fixed;
     bottom: 100px;
     right: 100px;
-    width: 100px;
-    height: 120px;
+    width: 256px;
+    height: 256px;
     cursor: grab;
     z-index: 500;
     transition: transform 0.3s ease;
@@ -668,125 +668,49 @@ body {
     cursor: grabbing;
 }
 
-#cat-body {
-    position: relative;
+/* Pixel art SVG styling */
+.pixel-cat {
     width: 100%;
     height: 100%;
+    /* CRITICAL: Keep pixels sharp, no blur - for high quality rendering */
+    /* Multiple declarations for browser compatibility: */
+    image-rendering: pixelated;      /* Modern browsers (Chrome, Firefox) */
+    image-rendering: crisp-edges;    /* Fallback for Safari */
+    -ms-interpolation-mode: nearest-neighbor;  /* IE/Edge legacy */
+    /* Ensure no smoothing */
+    shape-rendering: crispEdges;
 }
 
-#cat-head {
-    position: absolute;
-    bottom: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 60px;
-    background: #000;
-    border-radius: 50% 50% 40% 40%;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
-
-#cat-ear-left, #cat-ear-right {
-    position: absolute;
-    top: 0;
-    width: 0;
-    height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    border-bottom: 25px solid #000;
-}
-
-#cat-ear-left {
-    left: 5px;
-    transform: rotate(-15deg);
-}
-
-#cat-ear-right {
-    right: 5px;
-    transform: rotate(15deg);
-}
-
-#cat-eye-left, #cat-eye-right {
-    position: absolute;
-    top: 20px;
-    width: 12px;
-    height: 12px;
-    background: #FFD700;
-    border-radius: 50%;
-    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.5);
-}
-
-#cat-eye-left {
-    left: 12px;
-}
-
-#cat-eye-right {
-    right: 12px;
-}
-
-#cat-eye-left::after, #cat-eye-right::after {
-    content: '';
-    position: absolute;
-    top: 3px;
-    left: 4px;
-    width: 4px;
-    height: 8px;
-    background: #000;
-    border-radius: 50%;
-    animation: blink 3s infinite;
-}
-
-@keyframes blink {
-    0%, 48%, 52%, 100% {
-        transform: scaleY(1);
+/* Pixel art animations */
+@keyframes pixel-blink {
+    0%, 90%, 100% {
+        opacity: 1;
     }
-    50% {
-        transform: scaleY(0.1);
+    95% {
+        opacity: 0;
     }
 }
 
-#cat-nose {
-    position: absolute;
-    top: 35px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 8px;
-    height: 8px;
-    background: #FFC0CB;
-    border-radius: 50%;
+@keyframes pixel-tail-wag {
+    0%, 100% {
+        transform: translateX(0) rotate(0deg);
+    }
+    25% {
+        transform: translateX(1px) rotate(2deg);
+    }
+    75% {
+        transform: translateX(-1px) rotate(-2deg);
+    }
 }
 
-#cat-mouth {
-    position: absolute;
-    top: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 20px;
-    height: 10px;
-    border: 2px solid #333;
-    border-top: none;
-    border-radius: 0 0 50% 50%;
+/* Apply animations to pixel cat elements */
+#cat-eyes {
+    animation: pixel-blink 3s infinite;
 }
 
 #cat-tail {
-    position: absolute;
-    bottom: 30px;
-    right: 0;
-    width: 40px;
-    height: 6px;
-    background: #000;
-    border-radius: 3px;
     transform-origin: left center;
-    animation: wagTail 2s ease-in-out infinite;
-}
-
-@keyframes wagTail {
-    0%, 100% {
-        transform: rotate(0deg);
-    }
-    50% {
-        transform: rotate(15deg);
-    }
+    animation: pixel-tail-wag 2s ease-in-out infinite;
 }
 
 /* Cat hover effect */
@@ -797,7 +721,7 @@ body {
 /* Speech Bubble */
 #cat-speech-bubble {
     position: absolute;
-    bottom: 130px;
+    bottom: 270px;
     right: -20px;
     min-width: 200px;
     max-width: 250px;

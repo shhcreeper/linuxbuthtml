@@ -1209,21 +1209,27 @@ function displayContentInIframe(html, container) {
     
     container.appendChild(iframe);
     
-    // Method 1: srcdoc (preferred for avoiding X-Frame-Options)
+    // Method 1: Blob URL (preferred - allows JavaScript to execute properly!)
+    try {
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+        iframe.src = blobUrl;
+        
+        // Clean up blob URL after a delay to ensure all resources load
+        iframe.onload = () => {
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        };
+        return true;
+    } catch (e) {
+        console.log('Blob URL method failed, trying srcdoc');
+    }
+    
+    // Method 2: srcdoc (fallback - can block some JavaScript)
     try {
         iframe.srcdoc = html;
         return true;
     } catch (e) {
-        console.log('srcdoc method failed, trying blob URL');
-    }
-    
-    // Method 2: Blob URL (fallback)
-    try {
-        const blob = new Blob([html], { type: 'text/html' });
-        iframe.src = URL.createObjectURL(blob);
-        return true;
-    } catch (e) {
-        console.log('Blob URL method failed, trying document.write');
+        console.log('srcdoc method failed, trying document.write');
     }
     
     // Method 3: document.write (last resort)

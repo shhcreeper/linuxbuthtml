@@ -1299,19 +1299,41 @@ Secondary Slave: None
         </div>
     </div>
 
-    <!-- Black Cat Pet -->
+    <!-- Black Cat Pet - Pixel Art Style -->
     <div id="cat-pet">
-        <div id="cat-body">
-            <div id="cat-ear-left"></div>
-            <div id="cat-ear-right"></div>
-            <div id="cat-head">
-                <div id="cat-eye-left"></div>
-                <div id="cat-eye-right"></div>
-                <div id="cat-nose"></div>
-                <div id="cat-mouth"></div>
-            </div>
-            <div id="cat-tail"></div>
-        </div>
+        <svg class="pixel-cat" viewBox="0 0 32 32" width="256" height="256" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ears -->
+            <rect x="4" y="2" width="4" height="6" fill="#1a1a1a"/>
+            <rect x="24" y="2" width="4" height="6" fill="#1a1a1a"/>
+            
+            <!-- Head -->
+            <rect x="6" y="8" width="20" height="12" fill="#1a1a1a"/>
+            
+            <!-- Eyes (golden) -->
+            <g id="cat-eyes">
+                <rect x="10" y="12" width="4" height="4" fill="#FFD700"/>
+                <rect x="18" y="12" width="4" height="4" fill="#FFD700"/>
+                <!-- Pupils -->
+                <rect x="11" y="14" width="2" height="2" fill="#000"/>
+                <rect x="19" y="14" width="2" height="2" fill="#000"/>
+            </g>
+            
+            <!-- Pink nose -->
+            <rect x="14" y="17" width="4" height="2" fill="#FF69B4"/>
+            
+            <!-- Body -->
+            <rect x="8" y="20" width="16" height="8" fill="#1a1a1a"/>
+            
+            <!-- Legs/Feet -->
+            <rect x="10" y="28" width="3" height="3" fill="#1a1a1a"/>
+            <rect x="19" y="28" width="3" height="3" fill="#1a1a1a"/>
+            
+            <!-- Tail -->
+            <g id="cat-tail">
+                <rect x="24" y="22" width="6" height="2" fill="#1a1a1a"/>
+                <rect x="28" y="20" width="3" height="2" fill="#1a1a1a"/>
+            </g>
+        </svg>
         <div id="cat-speech-bubble" class="hidden">
             <div class="speech-text"></div>
         </div>
