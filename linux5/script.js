@@ -1126,15 +1126,15 @@ function processProxiedHTML(html, originalURL) {
         
         // 3. Fix ALL relative URLs to prevent black pages from missing resources
         // Fix src="/path" (not src="//")
-        html = html.replace(/src=["']\/(?!\/)/gi, `src="${baseURL}/`);
+        html = html.replace(/src=(["'])\/(?!\/)/gi, `src=$1${baseURL}/`);
         // Fix href="/path" (not href="//")
-        html = html.replace(/href=["']\/(?!\/)/gi, `href="${baseURL}/`);
-        // Fix url(/path) in CSS
-        html = html.replace(/url\(["']?\/(?!\/)/gi, `url(${baseURL}/`);
+        html = html.replace(/href=(["'])\/(?!\/)/gi, `href=$1${baseURL}/`);
+        // Fix url(/path) in CSS - handle with or without quotes
+        html = html.replace(/url\((["']?)\/(?!\/)/gi, `url($1${baseURL}/`);
         // Fix src="//domain" protocol-relative URLs
-        html = html.replace(/src=["']\/\//gi, 'src="https://');
+        html = html.replace(/src=(["'])\/\//gi, 'src=$1https://');
         // Fix href="//domain" protocol-relative URLs
-        html = html.replace(/href=["']\/\//gi, 'href="https://');
+        html = html.replace(/href=(["'])\/\//gi, 'href=$1https://');
         
         // 4. Remove frame-busting code more thoroughly
         html = html.replace(/if\s*\(\s*top\s*!==?\s*self\s*\)/gi, 'if(false)');
@@ -1164,7 +1164,9 @@ function processProxiedHTML(html, originalURL) {
                 }
             </style>
         `;
-        html = html.replace('</head>', defaultStyles + '</head>');
+        if (/<\/head>/i.test(html)) {
+            html = html.replace(/<\/head>/i, defaultStyles + '</head>');
+        }
         
         // 7. Inject script to disable additional frame-busting attempts
         const antiFrameBustScript = `
@@ -1183,7 +1185,9 @@ function processProxiedHTML(html, originalURL) {
             })();
             </script>
         `;
-        html = html.replace('<head>', '<head>' + antiFrameBustScript);
+        if (/<head>/i.test(html)) {
+            html = html.replace(/<head>/i, '<head>' + antiFrameBustScript);
+        }
         
     } catch (e) {
         console.error('Error processing HTML:', e);
