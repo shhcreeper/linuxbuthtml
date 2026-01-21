@@ -676,6 +676,138 @@ function scheduleNextCatMessage() {
     }, delay);
 }
 
+// ===== CAT AI CHATBOT =====
+class SimpleCatBot {
+    constructor() {
+        this.responses = {
+            'hello': ['Meow! Hello there! 😺', 'Hi! Nice to see you! 🐱', 'Hey! What\'s up?'],
+            'hi': ['Meow! Hello there! 😺', 'Hi! Nice to see you! 🐱', 'Hey! What\'s up?'],
+            'how are you': ['I\'m purr-fect! How are you? 😸', 'Feeling great! Thanks for asking!', 'Meow-velous!'],
+            'what is your name': ['I\'m your desktop cat! You can call me Whiskers! 🐱', 'I\'m Cat, your AI companion!'],
+            'help': ['I can chat with you, tell jokes, or just keep you company! What would you like? 😺', 'Just talk to me! I\'m here to help!'],
+            'joke': ['Why don\'t cats play poker? Too many cheetahs! 😹', 'What do you call a pile of cats? A meow-tain! 🏔️😺', 'Why did the cat sit on the computer? To keep an eye on the mouse! 🖱️😺'],
+            'bye': ['Goodbye! See you later! 👋😺', 'Bye! Come back soon!', 'See you! Meow! 🐱'],
+            'goodbye': ['Goodbye! See you later! 👋😺', 'Bye! Come back soon!', 'See you! Meow! 🐱'],
+            'game': ['Try Pinball or Solitaire! They\'re really fun! 🎮', 'I love watching you play games! 😺'],
+            'thank': ['You\'re welcome! 😺', 'My pleasure! 🐱', 'Happy to help! Purr... 😸'],
+            'love': ['Aww, I love you too! 😻', 'You\'re the best! 💕🐱'],
+            'cute': ['Thank you! You\'re pretty cute yourself! 😸', 'Aww, you\'re making me purr! 😺'],
+            'food': ['I love tuna! Do you have any? 🐟😺', 'Meow! I\'m always hungry! 🍽️'],
+            'sleep': ['Cats sleep 70% of their lives! I\'m doing my part! 😴', 'Nap time is the best time! 💤'],
+            'play': ['Yes! Let\'s play! What game should we try? 🎮', 'I love playtime! 😺']
+        };
+    }
+    
+    chat(message) {
+        message = message.toLowerCase().trim();
+        
+        for (const [key, responses] of Object.entries(this.responses)) {
+            if (message.includes(key)) {
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+        }
+        
+        // Default responses
+        const defaults = [
+            'Meow! Tell me more! 😺',
+            'Interesting! Go on... 🐱',
+            'I\'m listening! Purr... 😸',
+            'That\'s neat! What else? 🐈',
+            'Hmm, fascinating! 😺',
+            'I see! Continue... 🐱'
+        ];
+        
+        return defaults[Math.floor(Math.random() * defaults.length)];
+    }
+}
+
+const catAI = new SimpleCatBot();
+
+function openCatChat() {
+    // Check if chat window already exists
+    let chatWindow = document.getElementById('cat-chat-window');
+    if (chatWindow) {
+        openWindow('cat-chat-window');
+        return;
+    }
+    
+    // Create chat window
+    chatWindow = document.createElement('div');
+    chatWindow.id = 'cat-chat-window';
+    chatWindow.className = 'window';
+    chatWindow.style.width = '400px';
+    chatWindow.style.height = '500px';
+    chatWindow.style.left = '50%';
+    chatWindow.style.top = '50%';
+    chatWindow.style.transform = 'translate(-50%, -50%)';
+    
+    chatWindow.innerHTML = `
+        <div class="window-titlebar">
+            <span class="window-title">Chat with Cat 🐱</span>
+            <div class="window-controls">
+                <button class="window-control" onclick="minimizeWindow(this.closest('.window'))">_</button>
+                <button class="window-control" onclick="closeWindow(this.closest('.window'))">×</button>
+            </div>
+        </div>
+        <div class="window-content" style="display: flex; flex-direction: column; height: calc(100% - 30px);">
+            <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 10px; background: #f0f0f0; border-bottom: 1px solid #ccc;">
+                <p><b>Cat:</b> Meow! I'm your AI assistant cat. Ask me anything! 😺</p>
+            </div>
+            <div style="padding: 10px; display: flex; gap: 5px; background: #ece9d8;">
+                <input type="text" id="cat-input" placeholder="Type your message..." 
+                       style="flex: 1; padding: 8px; border: 1px solid #888; font-family: Tahoma, sans-serif;"
+                       onkeypress="if(event.key==='Enter')sendCatMessage()">
+                <button onclick="sendCatMessage()" style="padding: 8px 15px; background: #ece9d8; border: 2px outset #fff; cursor: pointer; font-family: Tahoma, sans-serif;">Send</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(chatWindow);
+    makeDraggable(chatWindow);
+    openWindow('cat-chat-window');
+    
+    // Focus input
+    setTimeout(() => {
+        document.getElementById('cat-input').focus();
+    }, 100);
+}
+
+function sendCatMessage() {
+    const input = document.getElementById('cat-input');
+    const messages = document.getElementById('chat-messages');
+    
+    if (!input || !messages || !input.value.trim()) return;
+    
+    // Show user message
+    const userMsg = document.createElement('p');
+    userMsg.innerHTML = `<b>You:</b> ${input.value}`;
+    userMsg.style.marginBottom = '10px';
+    messages.appendChild(userMsg);
+    
+    const userText = input.value;
+    input.value = '';
+    
+    // Show typing indicator
+    const typing = document.createElement('p');
+    typing.innerHTML = '<b>Cat:</b> <i>typing...</i>';
+    typing.style.marginBottom = '10px';
+    messages.appendChild(typing);
+    messages.scrollTop = messages.scrollHeight;
+    
+    // Get AI response
+    setTimeout(() => {
+        const reply = catAI.chat(userText);
+        
+        // Remove typing, show response
+        typing.remove();
+        const catMsg = document.createElement('p');
+        catMsg.innerHTML = `<b>Cat:</b> ${reply}`;
+        catMsg.style.marginBottom = '10px';
+        messages.appendChild(catMsg);
+        messages.scrollTop = messages.scrollHeight;
+    }, 500 + Math.random() * 1000);
+}
+
 // Add some start menu interactions
 document.addEventListener('DOMContentLoaded', () => {
     const startMenuItems = document.querySelectorAll('.start-menu-item');
@@ -2016,39 +2148,123 @@ function performShutdown() {
     const option = document.querySelector('input[name="shutdown"]:checked').value;
     closeWindow(document.getElementById('shutdown-window'));
     
-    const desktop = document.getElementById('desktop');
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
+    if (option === 'shutdown') {
+        performShutdownAnimation();
+    } else if (option === 'restart') {
+        performRestartAnimation();
+    } else if (option === 'logoff') {
+        performLogOffAnimation();
+    }
+}
+
+function performShutdownAnimation() {
+    const screen = document.createElement('div');
+    screen.className = 'shutdown-screen';
+    screen.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: #0066cc;
-        z-index: 99999;
+        background: #5a7fc6;
+        z-index: 999999;
         display: flex;
-        align-items: center;
         justify-content: center;
-        color: white;
-        font-size: 24px;
-        font-weight: bold;
-        flex-direction: column;
-        gap: 20px;
+        align-items: center;
+        animation: fadeIn 0.5s;
     `;
-    
-    const messages = {
-        'shutdown': 'Shutting down...',
-        'restart': 'Restarting...',
-        'logoff': 'Logging off...'
-    };
-    
-    overlay.innerHTML = `<div>${messages[option]}</div><div style="font-size: 14px;">Just kidding! 😄</div>`;
-    document.body.appendChild(overlay);
+    screen.innerHTML = `
+        <div class="shutdown-message" style="text-align: center; color: white;">
+            <div class="spinner" style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <p style="font-size: 20px;">Windows is shutting down...</p>
+        </div>
+    `;
+    document.body.appendChild(screen);
     
     setTimeout(() => {
-        document.body.removeChild(overlay);
-        showCatMessage("I can't really shut down! I'm just a webpage! 😹");
+        screen.innerHTML = '<div style="background: #000; width: 100%; height: 100%;"></div>';
+    }, 2000);
+    
+    setTimeout(() => {
+        screen.innerHTML = `
+            <div class="shutdown-complete" style="text-align: center;">
+                <p style="color: orange; font-size: 24px;">It's now safe to turn off your computer.</p>
+            </div>
+        `;
     }, 3000);
+}
+
+function performRestartAnimation() {
+    const screen = document.createElement('div');
+    screen.className = 'shutdown-screen';
+    screen.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #5a7fc6;
+        z-index: 999999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.5s;
+    `;
+    screen.innerHTML = `
+        <div class="shutdown-message" style="text-align: center; color: white;">
+            <div class="spinner" style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <p style="font-size: 20px;">Windows is restarting...</p>
+        </div>
+    `;
+    document.body.appendChild(screen);
+    
+    setTimeout(() => {
+        screen.innerHTML = '<div style="background: #000; width: 100%; height: 100%;"></div>';
+    }, 2000);
+    
+    setTimeout(() => {
+        location.reload();
+    }, 3000);
+}
+
+function performLogOffAnimation() {
+    const screen = document.createElement('div');
+    screen.className = 'shutdown-screen';
+    screen.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #5a7fc6;
+        z-index: 999999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.5s;
+    `;
+    screen.innerHTML = `
+        <div class="shutdown-message" style="text-align: center; color: white;">
+            <div class="spinner" style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <p style="font-size: 20px;">Logging off...</p>
+        </div>
+    `;
+    document.body.appendChild(screen);
+    
+    setTimeout(() => {
+        screen.innerHTML = `
+            <div class="logoff-screen" style="text-align: center; color: white;">
+                <h1 style="font-size: 48px; margin-bottom: 40px;">Windows</h1>
+                <div style="margin: 40px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; display: inline-block;">
+                    <div style="width: 80px; height: 80px; background: #666; border-radius: 50%; margin: 0 auto 20px;"></div>
+                    <h2 style="margin-bottom: 20px;">Welcome</h2>
+                    <button onclick="location.reload()" style="padding: 10px 30px; font-size: 16px; cursor: pointer; background: #0066cc; color: white; border: none; border-radius: 3px;">
+                        Click to log in
+                    </button>
+                </div>
+            </div>
+        `;
+    }, 2000);
 }
 
 function updateVolume() {
@@ -3627,8 +3843,243 @@ function solitaireToggleDraw() {
 
 function renderSolitaire() {
     const board = document.getElementById('solitaire-board');
-    board.innerHTML = '<p style="color: white;">Solitaire game rendered! Draw from deck, build foundations from Ace to King.</p>';
-    // Full implementation would render all piles with drag-drop
+    board.innerHTML = '';
+    board.style.display = 'grid';
+    board.style.gridTemplateColumns = 'repeat(7, 100px)';
+    board.style.gridTemplateRows = 'auto';
+    board.style.gap = '10px';
+    board.style.padding = '20px';
+    board.style.minHeight = '500px';
+    
+    // Top row: draw pile, waste pile, empty, foundations
+    const topRow = document.createElement('div');
+    topRow.style.display = 'contents';
+    
+    // Draw pile
+    const drawPile = createPile('draw', solitaireState.drawPile.length > 0);
+    drawPile.onclick = drawFromDeck;
+    topRow.appendChild(drawPile);
+    
+    // Waste pile
+    const wastePile = createPile('waste', solitaireState.wastePile.length > 0);
+    if (solitaireState.wastePile.length > 0) {
+        const topCard = solitaireState.wastePile[solitaireState.wastePile.length - 1];
+        wastePile.appendChild(createCardElement(topCard, 'waste', solitaireState.wastePile.length - 1));
+    }
+    topRow.appendChild(wastePile);
+    
+    // Empty space
+    topRow.appendChild(document.createElement('div'));
+    
+    // Foundations
+    for (let i = 0; i < 4; i++) {
+        const foundation = createPile('foundation-' + i, solitaireState.foundations[i].length > 0);
+        if (solitaireState.foundations[i].length > 0) {
+            const topCard = solitaireState.foundations[i][solitaireState.foundations[i].length - 1];
+            foundation.appendChild(createCardElement(topCard, 'foundation-' + i, solitaireState.foundations[i].length - 1));
+        }
+        foundation.ondragover = (e) => e.preventDefault();
+        foundation.ondrop = (e) => handleDrop(e, 'foundation', i);
+        topRow.appendChild(foundation);
+    }
+    
+    board.appendChild(topRow);
+    
+    // Tableau piles
+    for (let i = 0; i < 7; i++) {
+        const pile = createTableauPile(i);
+        board.appendChild(pile);
+    }
+}
+
+function createPile(type, hasCards) {
+    const pile = document.createElement('div');
+    pile.className = 'solitaire-pile';
+    pile.dataset.pile = type;
+    pile.style.width = '80px';
+    pile.style.height = '110px';
+    pile.style.border = '2px dashed ' + (hasCards ? '#0f0' : '#666');
+    pile.style.borderRadius = '5px';
+    pile.style.position = 'relative';
+    pile.style.background = 'rgba(0,0,0,0.3)';
+    return pile;
+}
+
+function createTableauPile(index) {
+    const container = document.createElement('div');
+    container.style.position = 'relative';
+    container.style.minHeight = '110px';
+    container.dataset.pile = 'tableau-' + index;
+    container.ondragover = (e) => e.preventDefault();
+    container.ondrop = (e) => handleDrop(e, 'tableau', index);
+    
+    const cards = solitaireState.tableau[index];
+    for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const cardEl = createCardElement(card, 'tableau-' + index, i);
+        cardEl.style.top = (i * 25) + 'px';
+        container.appendChild(cardEl);
+    }
+    
+    return container;
+}
+
+function createCardElement(card, pile, index) {
+    const cardEl = document.createElement('div');
+    cardEl.className = 'solitaire-card ' + (card.faceUp ? card.color : 'facedown');
+    cardEl.style.width = '80px';
+    cardEl.style.height = '110px';
+    cardEl.style.border = '1px solid #000';
+    cardEl.style.borderRadius = '5px';
+    cardEl.style.background = card.faceUp ? '#fff' : '#0066cc';
+    cardEl.style.position = 'absolute';
+    cardEl.style.display = 'flex';
+    cardEl.style.flexDirection = 'column';
+    cardEl.style.alignItems = 'center';
+    cardEl.style.justifyContent = 'center';
+    cardEl.style.cursor = card.faceUp ? 'grab' : 'default';
+    cardEl.style.userSelect = 'none';
+    
+    if (card.faceUp) {
+        const valueEl = document.createElement('div');
+        valueEl.textContent = card.value;
+        valueEl.style.fontSize = '24px';
+        valueEl.style.fontWeight = 'bold';
+        valueEl.style.color = card.color;
+        
+        const suitEl = document.createElement('div');
+        suitEl.textContent = card.suit;
+        suitEl.style.fontSize = '32px';
+        
+        cardEl.appendChild(valueEl);
+        cardEl.appendChild(suitEl);
+        
+        cardEl.draggable = true;
+        cardEl.dataset.pile = pile;
+        cardEl.dataset.index = index;
+        cardEl.ondragstart = (e) => handleDragStart(e, card, pile, index);
+    }
+    
+    return cardEl;
+}
+
+function drawFromDeck() {
+    if (solitaireState.drawPile.length === 0) {
+        // Recycle waste pile
+        solitaireState.drawPile = solitaireState.wastePile.reverse();
+        solitaireState.wastePile = [];
+        solitaireState.drawPile.forEach(card => card.faceUp = false);
+    } else {
+        const card = solitaireState.drawPile.pop();
+        card.faceUp = true;
+        solitaireState.wastePile.push(card);
+    }
+    renderSolitaire();
+}
+
+function handleDragStart(e, card, pile, index) {
+    solitaireState.draggedCard = card;
+    solitaireState.draggedFrom = { pile, index };
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDrop(e, pileType, pileIndex) {
+    e.preventDefault();
+    
+    const card = solitaireState.draggedCard;
+    const from = solitaireState.draggedFrom;
+    
+    if (!card || !from) return;
+    
+    let canMove = false;
+    
+    if (pileType === 'tableau') {
+        canMove = canPlaceOnTableau(card, solitaireState.tableau[pileIndex]);
+        if (canMove) {
+            moveCardToTableau(card, from, pileIndex);
+        }
+    } else if (pileType === 'foundation') {
+        canMove = canPlaceOnFoundation(card, pileIndex);
+        if (canMove) {
+            moveCardToFoundation(card, from, pileIndex);
+        }
+    }
+    
+    solitaireState.draggedCard = null;
+    solitaireState.draggedFrom = null;
+}
+
+function canPlaceOnTableau(card, pile) {
+    if (pile.length === 0) {
+        return card.value === 'K';
+    }
+    
+    const topCard = pile[pile.length - 1];
+    return topCard.faceUp &&
+           card.color !== topCard.color &&
+           card.numValue === topCard.numValue - 1;
+}
+
+function canPlaceOnFoundation(card, foundationIndex) {
+    const foundation = solitaireState.foundations[foundationIndex];
+    
+    if (foundation.length === 0) {
+        return card.value === 'A';
+    }
+    
+    const topCard = foundation[foundation.length - 1];
+    return card.suit === topCard.suit &&
+           card.numValue === topCard.numValue + 1;
+}
+
+function moveCardToTableau(card, from, toIndex) {
+    removeCardFromSource(from);
+    solitaireState.tableau[toIndex].push(card);
+    flipTopCard(from.pile);
+    solitaireState.score += 5;
+    renderSolitaire();
+    updateSolitaireDisplay();
+    checkWin();
+}
+
+function moveCardToFoundation(card, from, foundationIndex) {
+    removeCardFromSource(from);
+    solitaireState.foundations[foundationIndex].push(card);
+    flipTopCard(from.pile);
+    solitaireState.score += 10;
+    renderSolitaire();
+    updateSolitaireDisplay();
+    checkWin();
+}
+
+function removeCardFromSource(from) {
+    if (from.pile.startsWith('tableau-')) {
+        const pileIndex = parseInt(from.pile.split('-')[1]);
+        solitaireState.tableau[pileIndex].splice(from.index);
+    } else if (from.pile === 'waste') {
+        solitaireState.wastePile.pop();
+    }
+}
+
+function flipTopCard(pile) {
+    if (pile.startsWith('tableau-')) {
+        const pileIndex = parseInt(pile.split('-')[1]);
+        const tableauPile = solitaireState.tableau[pileIndex];
+        if (tableauPile.length > 0) {
+            tableauPile[tableauPile.length - 1].faceUp = true;
+        }
+    }
+}
+
+function checkWin() {
+    const allFoundations = solitaireState.foundations;
+    const won = allFoundations.every(f => f.length === 13);
+    
+    if (won) {
+        setTimeout(() => {
+            showCatMessage('Congratulations! You won! 🎉 Score: ' + solitaireState.score);
+        }, 100);
+    }
 }
 
 function updateSolitaireDisplay() {
@@ -4107,10 +4558,12 @@ let pinballState = {
     canvas: null,
     ctx: null,
     ball: null,
-    flippers: [],
+    leftFlipper: null,
+    rightFlipper: null,
     bumpers: [],
     score: 0,
-    balls: 3,
+    ballsLeft: 3,
+    gameOver: false,
     gameLoop: null,
     keys: {}
 };
@@ -4123,6 +4576,10 @@ function initializePinball() {
         if (!pinballState.canvas.parentElement.parentElement.classList.contains('active')) return;
         if (e.key === 'z' || e.key === 'Z') pinballState.keys.leftFlipper = true;
         if (e.key === '/' || e.key === '?') pinballState.keys.rightFlipper = true;
+        if (e.key === ' ' && !pinballState.ball.active && !pinballState.gameOver) {
+            e.preventDefault();
+            launchBall();
+        }
     });
     
     document.addEventListener('keyup', (e) => {
@@ -4134,127 +4591,212 @@ function initializePinball() {
 }
 
 function pinballNew() {
+    const width = pinballState.canvas.width;
+    const height = pinballState.canvas.height;
+    
     pinballState.score = 0;
-    pinballState.balls = 3;
+    pinballState.ballsLeft = 3;
+    pinballState.gameOver = false;
+    
     pinballState.ball = {
-        x: 200,
-        y: 500,
+        x: width / 2,
+        y: 50,
+        radius: 8,
         vx: 0,
         vy: 0,
-        radius: 8
+        gravity: 0.3,
+        bounce: 0.7,
+        active: false
     };
     
-    pinballState.flippers = [
-        { x: 100, y: 550, angle: 0.5, active: false },
-        { x: 300, y: 550, angle: -0.5, active: false }
-    ];
+    pinballState.leftFlipper = {
+        x: width * 0.3,
+        y: height - 50,
+        length: 60,
+        angle: -0.3,
+        restAngle: -0.3,
+        activeAngle: -0.8,
+        active: false
+    };
+    
+    pinballState.rightFlipper = {
+        x: width * 0.7,
+        y: height - 50,
+        length: 60,
+        angle: 0.3,
+        restAngle: 0.3,
+        activeAngle: 0.8,
+        active: false
+    };
     
     pinballState.bumpers = [
-        { x: 100, y: 200, radius: 30 },
-        { x: 200, y: 150, radius: 30 },
-        { x: 300, y: 200, radius: 30 }
+        { x: width * 0.3, y: 150, radius: 30, score: 100 },
+        { x: width * 0.5, y: 120, radius: 30, score: 100 },
+        { x: width * 0.7, y: 150, radius: 30, score: 100 }
     ];
     
     document.getElementById('pinball-score').textContent = 0;
     document.getElementById('pinball-balls').textContent = 3;
     
-    if (pinballState.gameLoop) clearInterval(pinballState.gameLoop);
-    pinballState.gameLoop = setInterval(pinballUpdate, 20);
+    if (pinballState.gameLoop) cancelAnimationFrame(pinballState.gameLoop);
+    pinballGameLoop();
+}
+
+function launchBall() {
+    pinballState.ball.active = true;
+    pinballState.ball.x = pinballState.canvas.width - 50;
+    pinballState.ball.y = pinballState.canvas.height - 100;
+    pinballState.ball.vx = -5;
+    pinballState.ball.vy = -15;
+}
+
+function pinballGameLoop() {
+    pinballUpdate();
+    pinballDraw();
+    pinballState.gameLoop = requestAnimationFrame(pinballGameLoop);
 }
 
 function pinballUpdate() {
+    if (!pinballState.ball.active || pinballState.gameOver) return;
+    
     const ball = pinballState.ball;
+    const width = pinballState.canvas.width;
+    const height = pinballState.canvas.height;
     
-    // Gravity
-    ball.vy += 0.3;
+    // Apply gravity
+    ball.vy += ball.gravity;
     
-    // Update position
+    // Move ball
     ball.x += ball.vx;
     ball.y += ball.vy;
     
-    // Wall collision
-    if (ball.x < ball.radius || ball.x > pinballState.canvas.width - ball.radius) {
-        ball.vx *= -0.8;
-        ball.x = Math.max(ball.radius, Math.min(ball.x, pinballState.canvas.width - ball.radius));
+    // Wall collisions
+    if (ball.x - ball.radius < 0) {
+        ball.x = ball.radius;
+        ball.vx *= -ball.bounce;
     }
-    
-    if (ball.y < ball.radius) {
-        ball.vy *= -0.8;
+    if (ball.x + ball.radius > width) {
+        ball.x = width - ball.radius;
+        ball.vx *= -ball.bounce;
+    }
+    if (ball.y - ball.radius < 0) {
         ball.y = ball.radius;
+        ball.vy *= -ball.bounce;
     }
     
-    // Ball lost
-    if (ball.y > pinballState.canvas.height) {
-        pinballState.balls--;
-        document.getElementById('pinball-balls').textContent = pinballState.balls;
+    // Ball drain (bottom)
+    if (ball.y > height) {
+        pinballState.ballsLeft--;
+        ball.active = false;
+        document.getElementById('pinball-balls').textContent = pinballState.ballsLeft;
         
-        if (pinballState.balls > 0) {
-            ball.x = 200;
-            ball.y = 500;
-            ball.vx = 0;
-            ball.vy = 0;
+        if (pinballState.ballsLeft <= 0) {
+            pinballState.gameOver = true;
+            setTimeout(() => {
+                showCatMessage('Game Over! Final Score: ' + pinballState.score);
+            }, 100);
         } else {
-            clearInterval(pinballState.gameLoop);
-            showCatMessage('Game Over! Final score: ' + pinballState.score);
+            setTimeout(() => {
+                showCatMessage('Ball Lost! ' + pinballState.ballsLeft + ' balls remaining. Press SPACE to launch.');
+            }, 100);
         }
     }
     
-    // Bumper collision
-    pinballState.bumpers.forEach(bumper => {
+    // Bumper collisions
+    for (const bumper of pinballState.bumpers) {
         const dx = ball.x - bumper.x;
         const dy = ball.y - bumper.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
         if (dist < ball.radius + bumper.radius) {
+            // Bounce away from bumper
             const angle = Math.atan2(dy, dx);
             ball.vx = Math.cos(angle) * 10;
             ball.vy = Math.sin(angle) * 10;
-            pinballState.score += 100;
+            pinballState.score += bumper.score;
             document.getElementById('pinball-score').textContent = pinballState.score;
         }
-    });
-    
-    // Flipper activation
-    if (pinballState.keys.leftFlipper) {
-        pinballState.flippers[0].active = true;
-    } else {
-        pinballState.flippers[0].active = false;
     }
     
-    if (pinballState.keys.rightFlipper) {
-        pinballState.flippers[1].active = true;
-    } else {
-        pinballState.flippers[1].active = false;
-    }
+    // Flipper physics
+    updateFlipper(pinballState.leftFlipper, pinballState.keys.leftFlipper);
+    updateFlipper(pinballState.rightFlipper, pinballState.keys.rightFlipper);
+    checkFlipperCollision(pinballState.leftFlipper);
+    checkFlipperCollision(pinballState.rightFlipper);
+}
+
+function updateFlipper(flipper, isActive) {
+    flipper.active = isActive;
+    const targetAngle = flipper.active ? flipper.activeAngle : flipper.restAngle;
+    flipper.angle += (targetAngle - flipper.angle) * 0.3;
+}
+
+function checkFlipperCollision(flipper) {
+    const ball = pinballState.ball;
+    const endX = flipper.x + Math.cos(flipper.angle) * flipper.length;
+    const endY = flipper.y + Math.sin(flipper.angle) * flipper.length;
     
-    pinballDraw();
+    const dx = ball.x - endX;
+    const dy = ball.y - endY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    if (dist < ball.radius + 10 && flipper.active) {
+        // Hit by flipper - launch ball
+        const angle = flipper.angle - Math.PI / 2;
+        ball.vx = Math.cos(angle) * 15;
+        ball.vy = Math.sin(angle) * 15;
+    }
 }
 
 function pinballDraw() {
     const ctx = pinballState.ctx;
+    const width = pinballState.canvas.width;
+    const height = pinballState.canvas.height;
     
     // Clear
-    ctx.fillStyle = '#1a1a4d';
-    ctx.fillRect(0, 0, pinballState.canvas.width, pinballState.canvas.height);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, width, height);
     
     // Draw bumpers
-    ctx.fillStyle = '#f00';
-    pinballState.bumpers.forEach(bumper => {
+    ctx.fillStyle = '#ff0';
+    for (const bumper of pinballState.bumpers) {
         ctx.beginPath();
         ctx.arc(bumper.x, bumper.y, bumper.radius, 0, Math.PI * 2);
         ctx.fill();
-    });
+    }
     
     // Draw flippers
-    ctx.fillStyle = '#0f0';
-    ctx.fillRect(80, 540, 40, 10);
-    ctx.fillRect(280, 540, 40, 10);
+    ctx.strokeStyle = '#0ff';
+    ctx.lineWidth = 8;
+    drawFlipper(pinballState.leftFlipper);
+    drawFlipper(pinballState.rightFlipper);
     
     // Draw ball
+    if (pinballState.ball.active) {
+        ctx.fillStyle = '#f00';
+        ctx.beginPath();
+        ctx.arc(pinballState.ball.x, pinballState.ball.y, pinballState.ball.radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw UI
     ctx.fillStyle = '#fff';
+    ctx.font = '20px Arial';
+    ctx.fillText('Score: ' + pinballState.score, 10, 30);
+    ctx.fillText('Balls: ' + pinballState.ballsLeft, 10, 60);
+    if (!pinballState.ball.active && !pinballState.gameOver) {
+        ctx.fillText('Press SPACE to launch', width / 2 - 100, height / 2);
+    }
+}
+
+function drawFlipper(flipper) {
+    const ctx = pinballState.ctx;
     ctx.beginPath();
-    ctx.arc(pinballState.ball.x, pinballState.ball.y, pinballState.ball.radius, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(flipper.x, flipper.y);
+    const endX = flipper.x + Math.cos(flipper.angle) * flipper.length;
+    const endY = flipper.y + Math.sin(flipper.angle) * flipper.length;
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
 }
 
 // ===== TIC-TAC-TOE GAME =====
