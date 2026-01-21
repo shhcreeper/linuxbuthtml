@@ -1109,66 +1109,104 @@ function processProxiedHTML(html, originalURL) {
         const urlObj = new URL(originalURL);
         const baseURL = `${urlObj.protocol}//${urlObj.host}`;
         
-        // 1. Add DOCTYPE if missing
+        // 1. Ensure HTML structure exists
         if (!html.toLowerCase().includes('<!doctype')) {
-            html = '<!DOCTYPE html>' + html;
+            html = '<!DOCTYPE html>\n' + html;
         }
         
-        // 2. Inject base tag for relative URLs (CRITICAL for preventing black pages)
+        if (!html.toLowerCase().includes('<html')) {
+            html = '<!DOCTYPE html>\n<html>\n<head></head>\n<body>\n' + html + '\n</body>\n</html>';
+        }
+        
+        // 2. Add base tag FIRST (critical for resources)
         const baseTag = `<base href="${baseURL}/">`;
-        if (html.includes('<head>')) {
-            html = html.replace('<head>', '<head>' + baseTag);
-        } else if (html.includes('<HEAD>')) {
-            html = html.replace('<HEAD>', '<HEAD>' + baseTag);
+        if (/<head>/i.test(html)) {
+            html = html.replace(/<head>/i, '<head>\n' + baseTag);
         } else {
-            html = baseTag + html;
+            html = html.replace(/<html[^>]*>/i, '$&\n<head>\n' + baseTag + '\n</head>');
         }
         
-        // 3. Fix ALL relative URLs to prevent black pages from missing resources
-        // Fix src="/path" (not src="//")
-        html = html.replace(/src=(["'])\/(?!\/)/gi, `src=$1${baseURL}/`);
-        // Fix href="/path" (not href="//")
-        html = html.replace(/href=(["'])\/(?!\/)/gi, `href=$1${baseURL}/`);
-        // Fix url(/path) in CSS - handle with or without quotes
-        html = html.replace(/url\((["']?)\/(?!\/)/gi, `url($1${baseURL}/`);
-        // Fix src="//domain" protocol-relative URLs
-        html = html.replace(/src=(["'])\/\//gi, 'src=$1https://');
-        // Fix href="//domain" protocol-relative URLs
-        html = html.replace(/href=(["'])\/\//gi, 'href=$1https://');
+        // 3. Inject default styles to prevent white screen
+        const defaultStyles = `
+            <style>
+                /* Prevent white screen */
+                html {
+                    min-height: 100vh;
+                    background: #fff;
+                }
+                body {
+                    min-height: 100vh;
+                    margin: 0;
+                    padding: 8px;
+                    background: #fff;
+                    color: #000;
+                    font-family: Arial, sans-serif;
+                    font-size: 14px;
+                }
+                /* Ensure visibility */
+                * {
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                }
+            </style>
+        `;
         
-        // 4. Remove frame-busting code more thoroughly
+        if (/<\/head>/i.test(html)) {
+            html = html.replace(/<\/head>/i, defaultStyles + '\n</head>');
+        } else {
+            html = html.replace(/<body[^>]*>/i, '<head>' + defaultStyles + '</head>\n$&');
+        }
+        
+        // 4. Fix ALL relative URLs
+        // Fix src="/path"
+        html = html.replace(/src=(["'])\s*\/(?!\/)/gi, `src=$1${baseURL}/`);
+        // Fix href="/path"
+        html = html.replace(/href=(["'])\s*\/(?!\/)/gi, `href=$1${baseURL}/`);
+        // Fix url(/path) in CSS
+        html = html.replace(/url\((["']?)\s*\/(?!\/)/gi, `url($1${baseURL}/`);
+        // Fix protocol-relative URLs
+        html = html.replace(/src=(["'])\s*\/\//gi, 'src=$1https://');
+        html = html.replace(/href=(["'])\s*\/\//gi, 'href=$1https://');
+        html = html.replace(/url\((["']?)\s*\/\//gi, 'url($1https://');
+        
+        // 5. Add viewport meta
+        if (!html.toLowerCase().includes('viewport')) {
+            const viewportTag = '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
+            html = html.replace(/<head[^>]*>/i, '$&\n' + viewportTag);
+        }
+        
+        // 6. Add charset meta
+        if (!html.toLowerCase().includes('charset')) {
+            const charsetTag = '<meta charset="UTF-8">';
+            html = html.replace(/<head[^>]*>/i, '$&\n' + charsetTag);
+        }
+        
+        // 7. Remove frame-busting but keep other JS
         html = html.replace(/if\s*\(\s*top\s*!==?\s*self\s*\)/gi, 'if(false)');
         html = html.replace(/if\s*\(\s*window\s*!==?\s*window\.top\s*\)/gi, 'if(false)');
         html = html.replace(/if\s*\(\s*parent\s*!==?\s*self\s*\)/gi, 'if(false)');
         html = html.replace(/if\s*\(\s*self\s*!==?\s*top\s*\)/gi, 'if(false)');
         html = html.replace(/if\s*\(\s*top\s*!==?\s*window\s*\)/gi, 'if(false)');
-        html = html.replace(/top\.location\s*=/gi, '//top.location=');
-        html = html.replace(/window\.top\.location\s*=/gi, '//window.top.location=');
-        html = html.replace(/parent\.location\s*=/gi, '//parent.location=');
+        html = html.replace(/top\.location\s*=/gi, 'void 0;');
+        html = html.replace(/parent\.location\s*=/gi, 'void 0;');
+        html = html.replace(/window\.top\.location\s*=/gi, 'void 0;');
         
         // Remove X-Frame-Options detection
         html = html.replace(/['"]X-Frame-Options['"]/gi, '"X-Disabled-Header"');
         
-        // 5. Add viewport meta tag
-        if (!html.includes('viewport')) {
-            html = html.replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">');
+        // 8. Inject fallback content if body is empty
+        if (html.match(/<body[^>]*>\s*<\/body>/i)) {
+            const fallback = `
+                <div style="padding: 40px; text-align: center;">
+                    <h1>Page Loaded</h1>
+                    <p>Content from: ${originalURL}</p>
+                    <p>If you see this, the page might be loading dynamic content via JavaScript.</p>
+                </div>
+            `;
+            html = html.replace(/<body[^>]*>/i, '$&\n' + fallback);
         }
         
-        // 6. Add default styles to prevent black pages (CRITICAL FIX)
-        const defaultStyles = `
-            <style>
-                html, body { 
-                    background-color: #fff !important; 
-                    color: #000 !important;
-                    min-height: 100vh;
-                }
-            </style>
-        `;
-        if (/<\/head>/i.test(html)) {
-            html = html.replace(/<\/head>/i, defaultStyles + '</head>');
-        }
-        
-        // 7. Inject script to disable additional frame-busting attempts
+        // 9. Inject script to disable additional frame-busting attempts
         const antiFrameBustScript = `
             <script>
             (function() {
@@ -1200,36 +1238,37 @@ function displayContentInIframe(html, container) {
     // Clear content first
     container.innerHTML = '';
     
-    // Create iframe
+    // Create iframe with proper sandbox
     const iframe = document.createElement('iframe');
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
+    iframe.style.background = 'white';
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
     
     container.appendChild(iframe);
     
-    // Method 1: Blob URL (preferred - allows JavaScript to execute properly!)
+    // Method 1: Try srcdoc first (works for most content)
+    try {
+        iframe.srcdoc = html;
+        return true;
+    } catch (e) {
+        console.log('srcdoc failed, trying blob');
+    }
+    
+    // Method 2: Blob URL fallback (better for complex content)
     try {
         const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
         const blobUrl = URL.createObjectURL(blob);
         iframe.src = blobUrl;
         
-        // Clean up blob URL after a delay to ensure all resources load
         iframe.onload = () => {
+            // Clean up blob URL after a delay to ensure all resources load
             setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
         };
         return true;
     } catch (e) {
-        console.log('Blob URL method failed, trying srcdoc');
-    }
-    
-    // Method 2: srcdoc (fallback - can block some JavaScript)
-    try {
-        iframe.srcdoc = html;
-        return true;
-    } catch (e) {
-        console.log('srcdoc method failed, trying document.write');
+        console.log('blob failed, trying document.write');
     }
     
     // Method 3: document.write (last resort)
