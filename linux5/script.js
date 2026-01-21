@@ -900,604 +900,631 @@ function showContextMenu(menu, x, y) {
     menu.classList.remove('hidden');
 }
 
-// Browser Functions
-let browserHistory = [];
-let browserHistoryIndex = -1;
-let browserFavorites = [];
-let currentBrowserURL = '';
-let currentProxyIndex = 0;
-let proxyList = [
-    { name: 'AllOrigins', url: 'https://api.allorigins.win/raw?url=' },
-    { name: 'CORS Proxy', url: 'https://corsproxy.io/?' },
-    { name: 'CodeTabs', url: 'https://api.codetabs.com/v1/proxy?quest=' },
-    { name: 'ThingProxy', url: 'https://thingproxy.freeboard.io/fetch/' }
-];
-let browserPages = {
-    welcome: `<h1>Welcome to Internet Explorer!</h1>
-        <p>Enter a URL in the address bar to browse the web, or try these bookmarks:</p>
-        <ul>
-            <li><a href="#" onclick="browserLoadURL('https://example.com'); return false;">Example.com</a></li>
-            <li><a href="#" onclick="browserLoadURL('https://www.google.com'); return false;">Google</a></li>
-            <li><a href="#" onclick="browserLoadURL('https://www.wikipedia.org'); return false;">Wikipedia</a></li>
-        </ul>
-        <p style="margin-top: 20px; font-size: 12px; color: #666;">
-            <strong>Note:</strong> This browser uses a web proxy to load real websites. Some sites may not load properly due to CORS restrictions.
-        </p>`,
-    about: `<h1>About Linux/5</h1>
-        <p>Linux/5 is a nostalgic recreation of a Windows XP-style desktop experience.</p>
-        <p>Built with pure HTML, CSS, and JavaScript!</p>
-        <p><a href="#" onclick="browserNavigate('welcome'); return false;">Back to Home</a></p>`,
-    help: `<h1>Help & Tips</h1>
-        <ul>
-            <li>Double-click icons to open programs</li>
-            <li>Drag windows by their title bar</li>
-            <li>Right-click the cat for options</li>
-            <li>Use Alt+F4 to close windows</li>
-        </ul>
-        <p><a href="#" onclick="browserNavigate('welcome'); return false;">Back to Home</a></p>`,
-    games: `<h1>Games Portal</h1>
-        <p>Check out these games:</p>
-        <ul>
-            <li>Minesweeper - Classic puzzle game</li>
-            <li>Solitaire - Coming soon!</li>
-        </ul>
-        <p><a href="#" onclick="browserNavigate('welcome'); return false;">Back to Home</a></p>`
-};
-
-function initializeBrowser() {
+// Browser Functions - Working Proxy Browser with Multi-Proxy Fallback
+class WorkingProxyBrowser {
+  constructor() {
+    // List of working CORS proxies (updated 2024)
+    this.proxies = [
+      {
+        name: 'AllOrigins',
+        url: 'https://api.allorigins.win/raw?url=',
+        encode: true
+      },
+      {
+        name: 'CORS Anywhere (Heroku)',
+        url: 'https://cors-anywhere.herokuapp.com/',
+        encode: false
+      },
+      {
+        name: 'ThingProxy',
+        url: 'https://thingproxy.freeboard.io/fetch/',
+        encode: false
+      },
+      {
+        name: 'CORS.SH',
+        url: 'https://cors.sh/',
+        encode: false
+      },
+      {
+        name: 'Proxy via workers.dev',
+        url: 'https://proxy.cors.sh/',
+        encode: false
+      }
+    ];
+    
+    this.currentProxyIndex = 0;
+    this.urlHistory = [];
+    this.historyIndex = -1;
+    this.browserFavorites = [];
+    
     // Load favorites from localStorage
+    this.loadFavorites();
+  }
+  
+  loadFavorites() {
     const savedFavorites = localStorage.getItem('browserFavorites');
     if (savedFavorites) {
-        browserFavorites = JSON.parse(savedFavorites);
+      this.browserFavorites = JSON.parse(savedFavorites);
     } else {
-        // Default favorites
-        browserFavorites = [
-            { name: 'Google', url: 'https://www.google.com' },
-            { name: 'Wikipedia', url: 'https://www.wikipedia.org' },
-            { name: 'GitHub', url: 'https://github.com' },
-            { name: 'Example.com', url: 'https://example.com' }
-        ];
-        saveFavorites();
+      // Default favorites
+      this.browserFavorites = [
+        { name: 'Example.com', url: 'https://example.com' },
+        { name: 'Wikipedia', url: 'https://www.wikipedia.org' },
+        { name: 'DuckDuckGo Lite', url: 'https://lite.duckduckgo.com' },
+        { name: 'GitHub', url: 'https://github.com' }
+      ];
+      this.saveFavorites();
     }
-    
-    // Load custom proxy if set
-    const customProxy = localStorage.getItem('customProxy');
-    if (customProxy) {
-        proxyList.push({ name: 'Custom', url: customProxy });
-    }
-    
-    // Load preferred proxy index
-    const preferredProxy = localStorage.getItem('preferredProxy');
-    if (preferredProxy !== null) {
-        currentProxyIndex = parseInt(preferredProxy);
-    }
-    
-    browserNavigate('welcome');
-    updateFavoritesMenu();
-}
-
-function saveFavorites() {
-    localStorage.setItem('browserFavorites', JSON.stringify(browserFavorites));
-    updateFavoritesMenu();
-}
-
-function updateFavoritesMenu() {
+    this.updateFavoritesMenu();
+  }
+  
+  saveFavorites() {
+    localStorage.setItem('browserFavorites', JSON.stringify(this.browserFavorites));
+    this.updateFavoritesMenu();
+  }
+  
+  updateFavoritesMenu() {
     const menu = document.getElementById('favorites-menu');
     if (!menu) return;
     
     menu.innerHTML = '';
     
-    browserFavorites.forEach((fav, index) => {
-        const item = document.createElement('div');
-        item.className = 'fav-item';
-        item.innerHTML = `<span>⭐</span><span>${fav.name}</span>`;
-        item.onclick = (e) => {
-            e.stopPropagation();
-            browserLoadURL(fav.url);
-            menu.classList.add('hidden');
-        };
-        menu.appendChild(item);
+    this.browserFavorites.forEach((fav, index) => {
+      const item = document.createElement('div');
+      item.className = 'fav-item';
+      item.innerHTML = `<span>⭐</span><span>${fav.name}</span>`;
+      item.onclick = (e) => {
+        e.stopPropagation();
+        this.loadURL(fav.url);
+        menu.classList.add('hidden');
+      };
+      menu.appendChild(item);
     });
     
-    if (browserFavorites.length > 0) {
-        const divider = document.createElement('div');
-        divider.style.height = '1px';
-        divider.style.background = '#ccc';
-        divider.style.margin = '3px 0';
-        menu.appendChild(divider);
+    if (this.browserFavorites.length > 0) {
+      const divider = document.createElement('div');
+      divider.style.height = '1px';
+      divider.style.background = '#ccc';
+      divider.style.margin = '3px 0';
+      menu.appendChild(divider);
     }
     
     const addItem = document.createElement('div');
     addItem.className = 'fav-item';
-    addItem.innerHTML = `<span>➕</span><span>Add Current Page...</span>`;
+    addItem.innerHTML = '<span>➕</span><span>Add Current Page</span>';
     addItem.onclick = (e) => {
-        e.stopPropagation();
-        addToFavorites();
-        menu.classList.add('hidden');
+      e.stopPropagation();
+      this.addToFavorites();
+      menu.classList.add('hidden');
     };
     menu.appendChild(addItem);
-}
-
-function toggleFavoritesMenu(e) {
-    e.stopPropagation();
-    const menu = document.getElementById('favorites-menu');
-    menu.classList.toggle('hidden');
-}
-
-function addToFavorites() {
-    if (!currentBrowserURL || currentBrowserURL.includes('.linux5.local')) {
-        showCatMessage("Can't bookmark local pages! 😸");
-        return;
+  }
+  
+  addToFavorites() {
+    const addressBar = document.getElementById('browser-address');
+    const url = addressBar ? addressBar.value : '';
+    
+    if (!url || url === '') {
+      alert('No page loaded to add to favorites.');
+      return;
     }
     
-    const name = prompt('Enter bookmark name:', currentBrowserURL);
+    const name = prompt('Enter a name for this favorite:', url);
     if (name) {
-        browserFavorites.push({ name, url: currentBrowserURL });
-        saveFavorites();
-        showCatMessage(`Added "${name}" to favorites! ⭐`);
+      this.browserFavorites.push({ name, url });
+      this.saveFavorites();
     }
-}
-
-function browserNavigate(page) {
-    const content = document.getElementById('browser-content');
-    const urlBar = document.getElementById('browser-url');
-    
-    if (browserPages[page]) {
-        content.innerHTML = browserPages[page];
-        currentBrowserURL = 'http://' + page + '.linux5.local';
-        urlBar.value = currentBrowserURL;
-        browserHistory.push({ type: 'local', page });
-        browserHistoryIndex = browserHistory.length - 1;
-        updateBrowserStatus('Done');
-    }
-}
-
-function browserLoadURL(url) {
-    const urlBar = document.getElementById('browser-url');
-    urlBar.value = url;
-    browserGo();
-}
-
-function browserGo() {
-    const urlBar = document.getElementById('browser-url');
-    let url = urlBar.value.trim();
-    
-    if (!url) return;
-    
-    // Check if it's a local page
-    if (url.includes('.linux5.local')) {
-        const page = url.replace('http://', '').replace('.linux5.local', '');
-        if (browserPages[page]) {
-            browserNavigate(page);
-            return;
-        }
+  }
+  
+  async loadURL(url) {
+    // Normalize URL
+    if (!url) {
+      this.showWelcomePage();
+      return;
     }
     
-    // Add protocol if missing
+    url = url.trim();
+    
+    // Check for local pages
+    if (url.includes('.linux5.local') || url === 'about:home' || url === 'welcome') {
+      this.showWelcomePage();
+      return;
+    }
+    
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
+      url = 'https://' + url;
     }
     
-    currentBrowserURL = url;
+    // Update UI
+    this.showLoading(true);
+    this.updateAddressBar(url);
+    this.updateStatus('Connecting...');
     
-    // Use proxy to load the URL
-    loadURLWithProxy(url);
-}
-
-async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxies = []) {
-    const content = document.getElementById('browser-content');
-    const loading = document.getElementById('browser-loading');
-    
-    // Validate URL
-    try {
-        new URL(url);
-    } catch (e) {
-        loading.classList.add('hidden');
-        updateBrowserStatus('Error');
-        showErrorPage(url, 'Invalid URL', 'The URL you entered is not valid.');
-        return;
-    }
-    
-    // Check if we've tried all proxies
-    if (proxyIndex >= proxyList.length) {
-        loading.classList.add('hidden');
-        updateBrowserStatus('Error: All proxies failed');
-        showErrorPage(url, 'Cannot Display Page', `This website couldn't be loaded through the proxy. Tried proxies: ${triedProxies.join(', ')}`);
-        showCatMessage("Oops! All proxies failed. Some sites really don't like proxies! 😿");
-        return;
-    }
-    
-    const proxy = proxyList[proxyIndex];
-    triedProxies.push(proxy.name);
-    
-    // Show loading state with better feedback
-    updateBrowserStatus(`Connecting... (${proxyIndex + 1}/${proxyList.length})`);
-    loading.classList.remove('hidden');
-    
-    // Clear content and show loading spinner
-    content.innerHTML = `
-        <div style="text-align: center; padding: 40px;">
-            <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #0066cc; border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
-            <p style="font-size: 16px; font-weight: bold;">Loading page content...</p>
-            <p style="font-size: 12px; color: #666;">Trying ${proxy.name} proxy (${proxyIndex + 1} of ${proxyList.length})</p>
-            <p style="font-size: 11px; color: #999; margin-top: 10px;">${url}</p>
-            <p style="font-size: 10px; color: #999; margin-top: 10px;">Attempted: ${triedProxies.join(', ')}</p>
-        </div>
-    `;
-    
-    // Properly encode URL for proxy
-    const proxyURL = proxy.url + encodeURIComponent(url);
-    
-    try {
-        // Set timeout for fetch (15 seconds for better success rate)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        updateBrowserStatus(`Loading via ${proxy.name}...`);
-        
-        const response = await fetch(proxyURL, { 
-            signal: controller.signal,
-            headers: {
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-            }
-        });
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
-        updateBrowserStatus('Rendering...');
-        let html = await response.text();
-        
-        // Hide loading
-        loading.classList.add('hidden');
-        
-        // Advanced proxy fixes for frame-busting and URL rewriting
-        html = processProxiedHTML(html, url);
-        
-        // Display content using multiple methods
-        const success = displayContentInIframe(html, content);
-        
-        if (!success) {
-            throw new Error('Failed to display content');
-        }
-        
-        // Update status to Done only after successful load
-        updateBrowserStatus(`Done - Loaded via ${proxy.name}`);
-        
-        // Add to history
-        browserHistory.push({ type: 'url', url: currentBrowserURL });
-        browserHistoryIndex = browserHistory.length - 1;
-        
-        // Save successful proxy
-        currentProxyIndex = proxyIndex;
-        localStorage.setItem('preferredProxy', proxyIndex.toString());
-        
-    } catch (error) {
-        console.log(`Proxy ${proxy.name} failed:`, error.message);
-        
-        // Don't show error, just try next proxy
-        loading.classList.remove('hidden');
-        updateBrowserStatus(`Trying next proxy...`);
-        
-        // Try next proxy
-        await loadURLWithProxy(url, proxyIndex + 1, triedProxies);
-    }
-}
-
-function showErrorPage(url, title, message) {
-    const content = document.getElementById('browser-content');
-    const errorHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {
-                    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100vh;
-                    margin: 0;
-                    text-align: center;
-                }
-                .error-box {
-                    background: rgba(255,255,255,0.1);
-                    padding: 40px;
-                    border-radius: 20px;
-                    backdrop-filter: blur(10px);
-                    max-width: 500px;
-                }
-                h1 { font-size: 48px; margin-bottom: 10px; }
-                h2 { font-size: 24px; margin-bottom: 20px; }
-                p { font-size: 16px; opacity: 0.9; }
-                button {
-                    background: white;
-                    color: #667eea;
-                    border: none;
-                    padding: 12px 30px;
-                    font-size: 16px;
-                    border-radius: 25px;
-                    cursor: pointer;
-                    margin: 10px;
-                    font-weight: bold;
-                }
-                button:hover { transform: scale(1.05); transition: 0.2s; }
-                .url { 
-                    background: rgba(0,0,0,0.2); 
-                    padding: 10px; 
-                    border-radius: 10px; 
-                    word-break: break-all;
-                    margin: 15px 0;
-                    font-size: 14px;
-                }
-                ul {
-                    text-align: left;
-                    display: inline-block;
-                    margin: 10px 0;
-                }
-                li {
-                    margin: 5px 0;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="error-box">
-                <h1>🚫</h1>
-                <h2>${title}</h2>
-                <div class="url">${url}</div>
-                <p>${message}</p>
-                <p style="margin-top: 15px;">This can happen because:</p>
-                <ul>
-                    <li>The site blocks proxy access</li>
-                    <li>The site requires JavaScript features</li>
-                    <li>Network connection issues</li>
-                    <li>The proxy service is temporarily unavailable</li>
-                </ul>
-                <div style="margin-top: 20px;">
-                    <button onclick="parent.location.reload()">🔄 Try Again</button>
-                    <button onclick="parent.browserNavigate('welcome')">🏠 Go Home</button>
-                </div>
-                <div style="margin-top: 10px;">
-                    <button onclick="window.open('${url}', '_blank')">🔗 Open in New Tab</button>
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
-    
-    displayContentInIframe(errorHtml, content);
-}
-
-function processProxiedHTML(html, originalURL) {
-    try {
-        const urlObj = new URL(originalURL);
-        const baseURL = `${urlObj.protocol}//${urlObj.host}`;
-        
-        // 1. Ensure HTML structure exists
-        if (!html.toLowerCase().includes('<!doctype')) {
-            html = '<!DOCTYPE html>\n' + html;
-        }
-        
-        // Only add HTML wrapper if there's no HTML tag
-        if (!html.toLowerCase().includes('<html')) {
-            html = '<!DOCTYPE html>\n<html>\n<head></head>\n<body>\n' + html + '\n</body>\n</html>';
-        }
-        
-        // 2. Add base tag FIRST (critical for resources)
-        const baseTag = `<base href="${baseURL}/">`;
-        if (/<head>/i.test(html)) {
-            html = html.replace(/<head>/i, '<head>\n' + baseTag);
-        } else {
-            html = html.replace(/<html[^>]*>/i, '$&\n<head>\n' + baseTag + '\n</head>');
-        }
-        
-        // 3. Inject default styles to prevent white screen
-        const defaultStyles = `
-            <style>
-                /* Prevent white screen */
-                html {
-                    min-height: 100vh;
-                    background: #fff;
-                }
-                body {
-                    min-height: 100vh;
-                    margin: 0;
-                    padding: 8px;
-                    background: #fff;
-                    color: #000;
-                    font-family: Arial, sans-serif;
-                    font-size: 14px;
-                }
-            </style>
-        `;
-        
-        if (/<\/head>/i.test(html)) {
-            html = html.replace(/<\/head>/i, defaultStyles + '\n</head>');
-        } else {
-            html = html.replace(/<body[^>]*>/i, '<head>' + defaultStyles + '</head>\n$&');
-        }
-        
-        // 4. Fix ALL relative URLs
-        // Fix src="/path"
-        html = html.replace(/src=(["'])\s*\/(?!\/)/gi, `src=$1${baseURL}/`);
-        // Fix href="/path"
-        html = html.replace(/href=(["'])\s*\/(?!\/)/gi, `href=$1${baseURL}/`);
-        // Fix url(/path) in CSS
-        html = html.replace(/url\((["']?)\s*\/(?!\/)/gi, `url($1${baseURL}/`);
-        // Fix protocol-relative URLs
-        html = html.replace(/src=(["'])\s*\/\//gi, 'src=$1https://');
-        html = html.replace(/href=(["'])\s*\/\//gi, 'href=$1https://');
-        html = html.replace(/url\((["']?)\s*\/\//gi, 'url($1https://');
-        
-        // 5. Add viewport meta
-        if (!html.toLowerCase().includes('viewport')) {
-            const viewportTag = '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
-            html = html.replace(/<head[^>]*>/i, '$&\n' + viewportTag);
-        }
-        
-        // 6. Add charset meta
-        if (!html.toLowerCase().includes('charset')) {
-            const charsetTag = '<meta charset="UTF-8">';
-            html = html.replace(/<head[^>]*>/i, '$&\n' + charsetTag);
-        }
-        
-        // 7. Remove frame-busting but keep other JS
-        html = html.replace(/if\s*\(\s*top\s*!==?\s*self\s*\)/gi, 'if(false)');
-        html = html.replace(/if\s*\(\s*window\s*!==?\s*window\.top\s*\)/gi, 'if(false)');
-        html = html.replace(/if\s*\(\s*parent\s*!==?\s*self\s*\)/gi, 'if(false)');
-        html = html.replace(/if\s*\(\s*self\s*!==?\s*top\s*\)/gi, 'if(false)');
-        html = html.replace(/if\s*\(\s*top\s*!==?\s*window\s*\)/gi, 'if(false)');
-        html = html.replace(/top\.location\s*=/gi, '// top.location=');
-        html = html.replace(/parent\.location\s*=/gi, '// parent.location=');
-        html = html.replace(/window\.top\.location\s*=/gi, '// window.top.location=');
-        
-        // Remove X-Frame-Options detection
-        html = html.replace(/['"]X-Frame-Options['"]/gi, '"X-Disabled-Header"');
-        
-        // 8. Inject fallback content if body is empty
-        if (html.match(/<body[^>]*>\s*<\/body>/i)) {
-            const fallback = `
-                <div style="padding: 40px; text-align: center;">
-                    <h1>Page Loaded</h1>
-                    <p>Content from: ${originalURL}</p>
-                    <p>If you see this, the page might be loading dynamic content via JavaScript.</p>
-                </div>
-            `;
-            html = html.replace(/<body[^>]*>/i, '$&\n' + fallback);
-        }
-        
-        // 9. Inject script to disable additional frame-busting attempts
-        const antiFrameBustScript = `
-            <script>
-            (function() {
-                try {
-                    Object.defineProperty(window, 'top', {
-                        get: function() { return window; },
-                        set: function() {}
-                    });
-                    Object.defineProperty(window, 'parent', {
-                        get: function() { return window; },
-                        set: function() {}
-                    });
-                } catch(e) {}
-            })();
-            </script>
-        `;
-        if (/<head>/i.test(html)) {
-            html = html.replace(/<head>/i, '<head>' + antiFrameBustScript);
-        }
-        
-    } catch (e) {
-        console.error('Error processing HTML:', e);
-    }
-    
-    return html;
-}
-
-function displayContentInIframe(html, container) {
-    // Clear content first
-    container.innerHTML = '';
-    
-    // Create iframe with proper sandbox
-    const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.style.background = 'white';
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
-    
-    container.appendChild(iframe);
-    
-    // Method 1: Try srcdoc first (works for most content)
-    try {
-        iframe.srcdoc = html;
+    // Try each proxy
+    for (let i = 0; i < this.proxies.length; i++) {
+      const proxyIndex = (this.currentProxyIndex + i) % this.proxies.length;
+      const proxy = this.proxies[proxyIndex];
+      
+      this.updateStatus(`Trying ${proxy.name}...`);
+      
+      const success = await this.tryProxy(proxy, url);
+      
+      if (success) {
+        this.currentProxyIndex = proxyIndex;
+        this.addToHistory(url);
+        this.showLoading(false);
+        this.updateStatus(`Loaded via ${proxy.name}`);
         return true;
-    } catch (e) {
-        console.log('srcdoc failed, trying blob');
+      }
     }
     
-    // Method 2: Blob URL fallback (better for complex content)
+    // All proxies failed
+    this.showLoading(false);
+    this.showErrorPage(url);
+    this.updateStatus('Failed to load');
+    return false;
+  }
+  
+  async tryProxy(proxy, url) {
     try {
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        const blobUrl = URL.createObjectURL(blob);
-        iframe.src = blobUrl;
-        
-        iframe.onload = () => {
-            // Clean up blob URL after a delay to ensure all resources load
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-        };
-        return true;
-    } catch (e) {
-        console.log('blob failed, trying document.write');
-    }
-    
-    // Method 3: document.write (last resort)
-    try {
-        iframe.contentDocument.open();
-        iframe.contentDocument.write(html);
-        iframe.contentDocument.close();
-        return true;
-    } catch (e) {
-        console.error('All display methods failed');
+      const proxyURL = proxy.encode 
+        ? proxy.url + encodeURIComponent(url)
+        : proxy.url + url;
+      
+      // Set timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
+      const response = await fetch(proxyURL, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        console.log(`Proxy ${proxy.name} returned ${response.status}`);
         return false;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('text/html')) {
+        console.log(`Proxy ${proxy.name} returned non-HTML`);
+        return false;
+      }
+      
+      let html = await response.text();
+      
+      // Process HTML
+      html = this.processHTML(html, url);
+      
+      // Display in iframe
+      this.displayInIframe(html);
+      
+      return true;
+      
+    } catch (error) {
+      console.log(`Proxy ${proxy.name} failed:`, error.message);
+      return false;
     }
+  }
+  
+  processHTML(html, originalURL) {
+    try {
+      const baseURL = new URL(originalURL);
+      
+      // Ensure proper HTML structure
+      if (!html.toLowerCase().includes('<!doctype')) {
+        html = '<!DOCTYPE html>\n' + html;
+      }
+      
+      // Add base tag for relative URLs
+      const baseTag = `<base href="${baseURL.origin}/">`;
+      
+      if (html.toLowerCase().includes('<head>')) {
+        html = html.replace(/<head>/i, `<head>\n${baseTag}\n`);
+      } else {
+        html = `<!DOCTYPE html>\n<html>\n<head>\n${baseTag}\n</head>\n<body>\n${html}\n</body>\n</html>`;
+      }
+      
+      // Add default styles to ensure content is visible
+      const defaultCSS = `
+        <style>
+          html, body {
+            background-color: white !important;
+            color: black !important;
+            margin: 0;
+            padding: 0;
+          }
+          body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+          }
+        </style>
+      `;
+      
+      html = html.replace(/<\/head>/i, `${defaultCSS}\n</head>`);
+      
+      // Fix relative URLs
+      html = html.replace(/src=["']\s*\/(?!\/)/gi, `src="${baseURL.origin}/`);
+      html = html.replace(/href=["']\s*\/(?!\/)/gi, `href="${baseURL.origin}/`);
+      html = html.replace(/url\(["']?\s*\/(?!\/)/gi, `url(${baseURL.origin}/`);
+      
+      // Fix protocol-relative URLs
+      html = html.replace(/src=["']\s*\/\//gi, 'src="https://');
+      html = html.replace(/href=["']\s*\/\//gi, 'href="https://');
+      
+      // Remove frame-busting code
+      html = html.replace(/if\s*\(\s*top\s*!==?\s*self\s*\)/gi, 'if(false)');
+      html = html.replace(/if\s*\(\s*window\s*!==?\s*window\.top\s*\)/gi, 'if(false)');
+      html = html.replace(/if\s*\(\s*self\s*!==?\s*top\s*\)/gi, 'if(false)');
+      html = html.replace(/top\.location\s*=/gi, '//');
+      html = html.replace(/parent\.location\s*=/gi, '//');
+      
+      // Add viewport meta
+      if (!html.toLowerCase().includes('viewport')) {
+        html = html.replace(/<head>/i, '<head>\n<meta name="viewport" content="width=device-width, initial-scale=1">');
+      }
+      
+      // Add charset meta
+      if (!html.toLowerCase().includes('charset')) {
+        html = html.replace(/<head>/i, '<head>\n<meta charset="UTF-8">');
+      }
+      
+      return html;
+      
+    } catch (error) {
+      console.error('HTML processing error:', error);
+      return html; // Return original if processing fails
+    }
+  }
+  
+  displayInIframe(html) {
+    const iframe = document.getElementById('browser-iframe');
+    
+    if (!iframe) {
+      console.error('Browser iframe not found!');
+      return;
+    }
+    
+    // Method 1: Try srcdoc (best for same-origin)
+    try {
+      iframe.srcdoc = html;
+      return;
+    } catch (e) {
+      console.log('srcdoc failed, trying blob URL');
+    }
+    
+    // Method 2: Blob URL (allows JavaScript)
+    try {
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const blobURL = URL.createObjectURL(blob);
+      
+      iframe.onload = () => {
+        URL.revokeObjectURL(blobURL);
+      };
+      
+      iframe.src = blobURL;
+      return;
+    } catch (e) {
+      console.log('blob URL failed, trying data URI');
+    }
+    
+    // Method 3: Data URI (last resort)
+    try {
+      const dataURI = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+      iframe.src = dataURI;
+    } catch (e) {
+      console.error('All iframe methods failed');
+      this.showErrorPage('about:blank');
+    }
+  }
+  
+  showErrorPage(failedURL) {
+    const errorHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+          }
+          .error-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 50px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+          }
+          h1 {
+            font-size: 72px;
+            margin: 0 0 20px 0;
+          }
+          h2 {
+            font-size: 28px;
+            margin: 0 0 20px 0;
+          }
+          p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 15px 0;
+          }
+          .url-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            word-break: break-all;
+            font-family: monospace;
+          }
+          button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s;
+          }
+          button:hover {
+            transform: scale(1.05);
+          }
+          .suggestions {
+            text-align: left;
+            margin: 20px 0;
+          }
+          .suggestions li {
+            margin: 8px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="error-container">
+          <h1>🚫</h1>
+          <h2>Unable to Load Page</h2>
+          <div class="url-box">${failedURL}</div>
+          
+          <p><strong>This page couldn't be loaded through any available proxy.</strong></p>
+          
+          <div class="suggestions">
+            <p>Possible reasons:</p>
+            <ul>
+              <li>The website blocks proxy access</li>
+              <li>The website requires special authentication</li>
+              <li>The website uses advanced JavaScript features</li>
+              <li>Network connection issues</li>
+            </ul>
+          </div>
+          
+          <p><strong>Try these working sites:</strong></p>
+          <div style="margin: 20px 0;">
+            <button onclick="parent.browserLoadURL('https://example.com')">example.com</button>
+            <button onclick="parent.browserLoadURL('https://www.wikipedia.org')">wikipedia.org</button>
+            <button onclick="parent.browserLoadURL('https://lite.duckduckgo.com')">DuckDuckGo Lite</button>
+          </div>
+          
+          <p style="margin-top: 30px;">
+            <button onclick="parent.browserRetry()">🔄 Try Again</button>
+            <button onclick="window.open('${failedURL}', '_blank')">🔗 Open in Real Browser</button>
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    this.displayInIframe(errorHTML);
+  }
+  
+  showWelcomePage() {
+    const welcomeHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 40px;
+          }
+          .welcome-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          h1 {
+            font-size: 48px;
+            margin: 0 0 20px 0;
+            text-align: center;
+          }
+          p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin: 15px 0;
+          }
+          .bookmarks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+          }
+          .bookmark-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+          }
+          .bookmark-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+          }
+          .note {
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="welcome-container">
+          <h1>🌐 Welcome to Internet Explorer!</h1>
+          <p>Enter a URL in the address bar to browse the web, or try these bookmarks:</p>
+          
+          <div class="bookmarks">
+            <button class="bookmark-btn" onclick="parent.browserLoadURL('https://example.com')">📄 Example.com</button>
+            <button class="bookmark-btn" onclick="parent.browserLoadURL('https://www.wikipedia.org')">📚 Wikipedia</button>
+            <button class="bookmark-btn" onclick="parent.browserLoadURL('https://lite.duckduckgo.com')">🔍 DuckDuckGo Lite</button>
+            <button class="bookmark-btn" onclick="parent.browserLoadURL('https://github.com')">💻 GitHub</button>
+          </div>
+          
+          <div class="note">
+            <strong>Note:</strong> This browser uses multiple CORS proxies to load real websites. 
+            The system will automatically try different proxies if one fails. 
+            Some sites may not load properly due to security restrictions or advanced JavaScript requirements.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    this.displayInIframe(welcomeHTML);
+    this.updateAddressBar('http://welcome.linux5.local');
+    this.updateStatus('Ready');
+  }
+  
+  // UI Helper Methods
+  showLoading(show) {
+    const loader = document.getElementById('browser-loading');
+    if (loader) {
+      loader.style.display = show ? 'block' : 'none';
+    }
+  }
+  
+  updateStatus(message) {
+    const status = document.getElementById('browser-status');
+    const statusMsg = document.getElementById('browser-status-msg');
+    if (status) {
+      status.textContent = message;
+    }
+    if (statusMsg) {
+      statusMsg.textContent = message;
+    }
+  }
+  
+  updateAddressBar(url) {
+    const addressBar = document.getElementById('browser-address');
+    if (addressBar) {
+      addressBar.value = url;
+    }
+  }
+  
+  addToHistory(url) {
+    this.urlHistory = this.urlHistory.slice(0, this.historyIndex + 1);
+    this.urlHistory.push(url);
+    this.historyIndex = this.urlHistory.length - 1;
+  }
+  
+  goBack() {
+    if (this.historyIndex > 0) {
+      this.historyIndex--;
+      this.loadURL(this.urlHistory[this.historyIndex]);
+    }
+  }
+  
+  goForward() {
+    if (this.historyIndex < this.urlHistory.length - 1) {
+      this.historyIndex++;
+      this.loadURL(this.urlHistory[this.historyIndex]);
+    }
+  }
+  
+  refresh() {
+    if (this.urlHistory[this.historyIndex]) {
+      this.loadURL(this.urlHistory[this.historyIndex]);
+    } else {
+      const addressBar = document.getElementById('browser-address');
+      if (addressBar && addressBar.value) {
+        this.loadURL(addressBar.value);
+      }
+    }
+  }
 }
 
-function updateBrowserStatus(text) {
-    const status = document.getElementById('browser-status');
-    if (status) status.textContent = text;
+// Global instance
+const proxyBrowser = new WorkingProxyBrowser();
+
+// Global functions for UI
+function browserLoadURL(url) {
+  proxyBrowser.loadURL(url);
+}
+
+function browserRetry() {
+  proxyBrowser.refresh();
 }
 
 function browserBack() {
-    if (browserHistoryIndex > 0) {
-        browserHistoryIndex--;
-        const item = browserHistory[browserHistoryIndex];
-        
-        if (item.type === 'local') {
-            browserNavigate(item.page);
-        } else {
-            loadURLWithProxy(item.url);
-        }
-    }
+  proxyBrowser.goBack();
 }
 
 function browserForward() {
-    if (browserHistoryIndex < browserHistory.length - 1) {
-        browserHistoryIndex++;
-        const item = browserHistory[browserHistoryIndex];
-        
-        if (item.type === 'local') {
-            browserNavigate(item.page);
-        } else {
-            loadURLWithProxy(item.url);
-        }
-    }
+  proxyBrowser.goForward();
 }
 
 function browserRefresh() {
-    if (browserHistoryIndex >= 0) {
-        const item = browserHistory[browserHistoryIndex];
-        
-        if (item.type === 'local') {
-            browserNavigate(item.page);
-        } else {
-            loadURLWithProxy(item.url);
-        }
-    }
+  proxyBrowser.refresh();
 }
 
 function browserStop() {
-    const loading = document.getElementById('browser-loading');
-    loading.classList.add('hidden');
-    updateBrowserStatus('Stopped');
+  proxyBrowser.showLoading(false);
+  proxyBrowser.updateStatus('Stopped');
 }
 
 function browserHome() {
-    browserNavigate('welcome');
+  proxyBrowser.showWelcomePage();
+}
+
+function toggleFavoritesMenu(event) {
+  event.stopPropagation();
+  const menu = document.getElementById('favorites-menu');
+  if (menu) {
+    menu.classList.toggle('hidden');
+  }
+}
+
+function addToFavorites() {
+  proxyBrowser.addToFavorites();
+}
+
+// Initialize browser on page load
+function initializeBrowser() {
+  proxyBrowser.showWelcomePage();
 }
 
 // Notepad Functions
