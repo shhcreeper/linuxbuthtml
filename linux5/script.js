@@ -10,6 +10,126 @@ let activeWindow = null;
 let startMenuOpen = false;
 let bootSequenceCompleted = false;
 
+// Theme System
+const themes = {
+    'luna-blue': {
+        name: 'Luna Blue',
+        taskbar: 'linear-gradient(to bottom, #3168d5, #1941a5)',
+        titlebar: 'linear-gradient(to bottom, #0a246a, #0a246a, #3168d5)',
+        titlebarInactive: 'linear-gradient(to bottom, #7f95bd, #7f95bd, #a9c1de)',
+        startButton: 'linear-gradient(to bottom, #3c8f3c, #2d6b2d)',
+        windowBorder: '#0a246a',
+        buttonFace: '#ece9d8',
+        menuBg: '#ffffff',
+        desktop: 'radial-gradient(ellipse at center top, #5A8CC7 0%, #3A6EA5 100%)',
+        textColor: '#000000'
+    },
+    'luna-olive': {
+        name: 'Luna Olive',
+        taskbar: 'linear-gradient(to bottom, #7b9971, #4e6548)',
+        titlebar: 'linear-gradient(to bottom, #5a7852, #5a7852, #8cb084)',
+        titlebarInactive: 'linear-gradient(to bottom, #9db09a, #9db09a, #c0d2bd)',
+        startButton: 'linear-gradient(to bottom, #7b9971, #4e6548)',
+        windowBorder: '#5a7852',
+        buttonFace: '#ece9d8',
+        menuBg: '#ffffff',
+        desktop: 'radial-gradient(ellipse at center top, #8FAA7E 0%, #6B8860 100%)',
+        textColor: '#000000'
+    },
+    'luna-silver': {
+        name: 'Luna Silver',
+        taskbar: 'linear-gradient(to bottom, #9db3c7, #7492ab)',
+        titlebar: 'linear-gradient(to bottom, #5b7b97, #5b7b97, #9db3c7)',
+        titlebarInactive: 'linear-gradient(to bottom, #a8b8c8, #a8b8c8, #d0dce5)',
+        startButton: 'linear-gradient(to bottom, #6b8ba3, #4a6a82)',
+        windowBorder: '#5b7b97',
+        buttonFace: '#e5e5e5',
+        menuBg: '#ffffff',
+        desktop: 'radial-gradient(ellipse at center top, #B4C8D9 0%, #8FA8BC 100%)',
+        textColor: '#000000'
+    },
+    'classic': {
+        name: 'Classic',
+        taskbar: '#c0c0c0',
+        titlebar: 'linear-gradient(to right, #000080, #1084d0)',
+        titlebarInactive: 'linear-gradient(to right, #808080, #a0a0a0)',
+        startButton: '#c0c0c0',
+        windowBorder: '#000080',
+        buttonFace: '#c0c0c0',
+        menuBg: '#c0c0c0',
+        desktop: '#008080',
+        textColor: '#000000'
+    },
+    'royale': {
+        name: 'Royale',
+        taskbar: 'linear-gradient(to bottom, #1c3e6e, #0f2442)',
+        titlebar: 'linear-gradient(to bottom, #1c3e6e, #2a5298)',
+        titlebarInactive: 'linear-gradient(to bottom, #6b8ba8, #8ba8c8)',
+        startButton: 'linear-gradient(to bottom, #2e7d32, #1b5e20)',
+        windowBorder: '#1c3e6e',
+        buttonFace: '#e8eef7',
+        menuBg: '#ffffff',
+        desktop: 'radial-gradient(ellipse at center top, #2B5A8C 0%, #1A3A5C 100%)',
+        textColor: '#000000'
+    },
+    'zune': {
+        name: 'Zune Dark',
+        taskbar: 'linear-gradient(to bottom, #3a3a3a, #1a1a1a)',
+        titlebar: 'linear-gradient(to bottom, #2d2d2d, #1a1a1a)',
+        titlebarInactive: 'linear-gradient(to bottom, #4a4a4a, #3a3a3a)',
+        startButton: 'linear-gradient(to bottom, #f47321, #c45a1a)',
+        windowBorder: '#2d2d2d',
+        buttonFace: '#3a3a3a',
+        menuBg: '#2d2d2d',
+        desktop: 'radial-gradient(ellipse at center top, #2d2d2d 0%, #1a1a1a 100%)',
+        textColor: '#ffffff'
+    },
+    'high-contrast': {
+        name: 'High Contrast',
+        taskbar: '#000000',
+        titlebar: '#000080',
+        titlebarInactive: '#808080',
+        startButton: '#000000',
+        windowBorder: '#ffffff',
+        buttonFace: '#000000',
+        menuBg: '#000000',
+        desktop: '#000000',
+        textColor: '#ffffff'
+    }
+};
+
+function applyTheme(themeName) {
+    const theme = themes[themeName];
+    if (!theme) return;
+    
+    const root = document.documentElement;
+    
+    root.style.setProperty('--taskbar-bg', theme.taskbar);
+    root.style.setProperty('--titlebar-bg', theme.titlebar);
+    root.style.setProperty('--titlebar-inactive-bg', theme.titlebarInactive);
+    root.style.setProperty('--start-button-bg', theme.startButton);
+    root.style.setProperty('--window-border', theme.windowBorder);
+    root.style.setProperty('--button-face', theme.buttonFace);
+    root.style.setProperty('--menu-bg', theme.menuBg);
+    root.style.setProperty('--desktop-bg', theme.desktop);
+    root.style.setProperty('--text-color', theme.textColor);
+    
+    // Apply desktop background
+    document.body.style.background = theme.desktop;
+    
+    // Save to localStorage
+    localStorage.setItem('theme', themeName);
+    
+    // Update theme display name if elements exist
+    const themeNameElements = document.querySelectorAll('.current-theme-name');
+    themeNameElements.forEach(el => el.textContent = theme.name);
+}
+
+function loadSavedTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'luna-blue';
+    applyTheme(savedTheme);
+}
+
 // Boot sequence timing constants
 const SKIP_ENABLE_DELAY_MS = 1000;
 const BIOS_DURATION_MS = 2500;
@@ -109,6 +229,9 @@ function finishBootSequence() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Load saved theme first (before boot sequence)
+    loadSavedTheme();
+    
     // Start boot sequence
     startBootSequence();
     
@@ -2853,6 +2976,13 @@ function setWallpaper(type, value, position) {
 }
 
 function applyDisplaySettings() {
+    // Apply theme
+    const themeSelector = document.getElementById('theme-selector');
+    if (themeSelector) {
+        const selectedTheme = themeSelector.value;
+        applyTheme(selectedTheme);
+    }
+    
     const type = document.getElementById('wallpaper-type').value;
     const position = document.getElementById('wallpaper-position').value;
     const fontsize = document.getElementById('display-fontsize').value;
@@ -2890,6 +3020,28 @@ function applyDisplaySettings() {
     showCatMessage('Display settings applied! 🖥️');
 }
 
+function previewTheme(themeName) {
+    const theme = themes[themeName];
+    if (!theme) return;
+    
+    const preview = document.getElementById('theme-preview');
+    const titlebar = preview.querySelector('.preview-titlebar');
+    const taskbar = preview.querySelector('.preview-taskbar');
+    
+    titlebar.style.background = theme.titlebar;
+    taskbar.style.background = theme.taskbar;
+    preview.style.background = theme.desktop;
+}
+
+function loadThemeSettings() {
+    const savedTheme = localStorage.getItem('theme') || 'luna-blue';
+    const themeSelector = document.getElementById('theme-selector');
+    if (themeSelector) {
+        themeSelector.value = savedTheme;
+        previewTheme(savedTheme);
+    }
+}
+
 // Initialize wallpaper options when display settings window opens
 document.addEventListener('DOMContentLoaded', () => {
     const displayWindow = document.getElementById('display-settings-window');
@@ -2897,6 +3049,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mutations.forEach((mutation) => {
             if (mutation.attributeName === 'class' && displayWindow.classList.contains('active')) {
                 updateWallpaperOptions();
+                loadThemeSettings();
             }
         });
     });

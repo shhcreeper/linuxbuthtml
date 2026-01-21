@@ -796,7 +796,24 @@ Secondary Slave: None
             </div>
         </div>
         <div class="window-content">
-            <h3>Desktop Background</h3>
+            <h3>Theme</h3>
+            <div class="theme-selector">
+                <select id="theme-selector" onchange="previewTheme(this.value)">
+                    <option value="luna-blue">Luna Blue (Default)</option>
+                    <option value="luna-olive">Luna Olive Green</option>
+                    <option value="luna-silver">Luna Silver</option>
+                    <option value="classic">Classic</option>
+                    <option value="royale">Royale</option>
+                    <option value="zune">Zune Dark</option>
+                    <option value="high-contrast">High Contrast</option>
+                </select>
+                <div class="theme-preview" id="theme-preview">
+                    <div class="preview-titlebar"></div>
+                    <div class="preview-taskbar"></div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 20px;">Desktop Background</h3>
             
             <div class="wallpaper-preview" id="wallpaper-preview"></div>
             
