@@ -2099,7 +2099,7 @@ function minesweeperNew() {
 function renderMinesweeper() {
     const board = document.getElementById('minesweeper-board');
     board.innerHTML = '';
-    board.style.gridTemplateColumns = `repeat(${mineCols}, 30px)`;
+    board.style.gridTemplateColumns = `repeat(${mineCols}, 24px)`;
     
     for (let r = 0; r < mineRows; r++) {
         for (let c = 0; c < mineCols; c++) {
@@ -2114,7 +2114,7 @@ function renderMinesweeper() {
                     cell.classList.add('mine');
                 } else if (mineBoard[r][c].adjacentMines > 0) {
                     cell.textContent = mineBoard[r][c].adjacentMines;
-                    cell.style.color = getMineColor(mineBoard[r][c].adjacentMines);
+                    cell.classList.add(`cell-${mineBoard[r][c].adjacentMines}`);
                 }
             } else if (mineBoard[r][c].isFlagged) {
                 cell.classList.add('flagged');
