@@ -404,7 +404,9 @@ function openWindow(windowId) {
             'pinball-window': { width: 500, height: 750 },
             'tictactoe-window': { width: 450, height: 600 },
             'help-window': { width: 600, height: 500 },
-            'about-window': { width: 500, height: 400 }
+            'about-window': { width: 500, height: 400 },
+            'taskmanager-window': { width: 650, height: 550 },
+            'cmd-window': { width: 700, height: 500 }
         };
         
         // Get size for this window type, default to 800x600
@@ -424,6 +426,11 @@ function openWindow(windowId) {
         renderFileManager();
     } else if (windowId === 'calendar-window') {
         displayCalendar();
+    } else if (windowId === 'browser-window') {
+        // Initialize browser enhancements with a small delay to ensure DOM is ready
+        setTimeout(() => {
+            initializeBrowserEnhancements();
+        }, 100);
     }
 }
 
@@ -2039,14 +2046,14 @@ function minesweeperNew() {
     }
     
     renderMinesweeper();
-    document.getElementById('minesweeper-mines').textContent = mineCount;
-    document.getElementById('minesweeper-time').textContent = mineTimer;
+    document.getElementById('minesweeper-mines').textContent = String(mineCount).padStart(3, '0');
+    document.getElementById('minesweeper-time').textContent = String(mineTimer).padStart(3, '0');
 }
 
 function renderMinesweeper() {
     const board = document.getElementById('minesweeper-board');
     board.innerHTML = '';
-    board.style.gridTemplateColumns = `repeat(${mineCols}, 30px)`;
+    board.style.gridTemplateColumns = `repeat(${mineCols}, 24px)`;
     
     for (let r = 0; r < mineRows; r++) {
         for (let c = 0; c < mineCols; c++) {
@@ -2061,7 +2068,7 @@ function renderMinesweeper() {
                     cell.classList.add('mine');
                 } else if (mineBoard[r][c].adjacentMines > 0) {
                     cell.textContent = mineBoard[r][c].adjacentMines;
-                    cell.style.color = getMineColor(mineBoard[r][c].adjacentMines);
+                    cell.dataset.count = mineBoard[r][c].adjacentMines;
                 }
             } else if (mineBoard[r][c].isFlagged) {
                 cell.classList.add('flagged');
@@ -2085,7 +2092,7 @@ function mineReveal(r, c) {
     if (mineRevealed === 0) {
         mineTimerInterval = setInterval(() => {
             mineTimer++;
-            document.getElementById('minesweeper-time').textContent = mineTimer;
+            document.getElementById('minesweeper-time').textContent = String(mineTimer).padStart(3, '0');
         }, 1000);
     }
     
@@ -4260,23 +4267,78 @@ function snakeUpdate() {
 function snakeDraw() {
     const ctx = snakeState.ctx;
     const gs = snakeState.gridSize;
+    const canvas = snakeState.canvas;
+    const tileCount = canvas.width / gs;
     
-    // Clear canvas
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, snakeState.canvas.width, snakeState.canvas.height);
+    // Gradient background
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(1, '#16213e');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw snake
-    ctx.fillStyle = '#0f0';
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= tileCount; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * gs, 0);
+        ctx.lineTo(i * gs, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * gs);
+        ctx.lineTo(canvas.width, i * gs);
+        ctx.stroke();
+    }
+    
+    // Draw snake with gradient
     snakeState.snake.forEach((seg, i) => {
-        ctx.fillRect(seg.x * gs, seg.y * gs, gs - 2, gs - 2);
-        if (i === 0) {
-            ctx.fillStyle = '#0f0';
-        }
+        const segGradient = ctx.createRadialGradient(
+            seg.x * gs + gs/2,
+            seg.y * gs + gs/2,
+            0,
+            seg.x * gs + gs/2,
+            seg.y * gs + gs/2,
+            gs
+        );
+        segGradient.addColorStop(0, i === 0 ? '#4eff4e' : '#0f0');
+        segGradient.addColorStop(1, i === 0 ? '#00cc00' : '#0a0');
+        ctx.fillStyle = segGradient;
+        ctx.fillRect(
+            seg.x * gs + 1,
+            seg.y * gs + 1,
+            gs - 2,
+            gs - 2
+        );
     });
     
-    // Draw food
-    ctx.fillStyle = '#f00';
-    ctx.fillRect(snakeState.food.x * gs, snakeState.food.y * gs, gs - 2, gs - 2);
+    // Draw food with pulsing animation
+    const pulse = Math.sin(Date.now() / 200) * 2 + gs - 2;
+    const foodGradient = ctx.createRadialGradient(
+        snakeState.food.x * gs + gs/2,
+        snakeState.food.y * gs + gs/2,
+        0,
+        snakeState.food.x * gs + gs/2,
+        snakeState.food.y * gs + gs/2,
+        pulse/2
+    );
+    foodGradient.addColorStop(0, '#ff4444');
+    foodGradient.addColorStop(1, '#cc0000');
+    ctx.fillStyle = foodGradient;
+    ctx.fillRect(
+        snakeState.food.x * gs + (gs - pulse)/2,
+        snakeState.food.y * gs + (gs - pulse)/2,
+        pulse,
+        pulse
+    );
+    
+    // Polished score display
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(5, 5, 150, 40);
+    ctx.fillStyle = '#4eff4e';
+    ctx.font = 'bold 20px "Courier New"';
+    ctx.textAlign = 'left';
+    ctx.fillText('SCORE: ' + snakeState.score, 15, 30);
 }
 
 function snakeGameOver() {
@@ -5091,3 +5153,374 @@ function applyRegionalSettings() {
     
     showCatMessage('Regional settings applied! 🌍');
 }
+
+// Enhanced Browser Address Bar Setup
+function setupBrowserAddressBar() {
+  const addressBar = document.getElementById('browser-address');
+  
+  if (!addressBar) {
+    console.error('Address bar not found!');
+    return;
+  }
+  
+  // Remove any existing event listeners by cloning the element
+  const newAddressBar = addressBar.cloneNode(true);
+  addressBar.parentNode.replaceChild(newAddressBar, addressBar);
+  
+  // Handle Enter key
+  newAddressBar.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      e.preventDefault();
+      const url = this.value.trim();
+      if (url) {
+        browserLoadURL(url);
+      }
+    }
+  });
+  
+  // Handle input changes for live feedback
+  newAddressBar.addEventListener('input', function(e) {
+    // Optional: Could add URL suggestions here in the future
+  });
+  
+  console.log('Browser address bar setup complete');
+}
+
+// Global keyboard shortcut handler for browser
+function setupBrowserKeyboardShortcuts() {
+  document.addEventListener('keydown', function(e) {
+    // Check if browser window is active
+    const browserWindow = document.getElementById('browser-window');
+    if (!browserWindow || browserWindow.style.display === 'none') {
+      return;
+    }
+    
+    // Ctrl+L to focus address bar
+    if (e.ctrlKey && e.key === 'l') {
+      e.preventDefault();
+      const addressBar = document.getElementById('browser-address');
+      if (addressBar) {
+        addressBar.focus();
+        addressBar.select();
+      }
+    }
+  });
+}
+
+// Initialize browser enhancements when browser window opens
+function initializeBrowserEnhancements() {
+  setupBrowserAddressBar();
+  setupBrowserKeyboardShortcuts();
+}
+
+// ===== TASK MANAGER =====
+let taskManagerProcesses = [
+    { name: 'System', pid: 4, cpu: 0, memory: 128 },
+    { name: 'explorer.exe', pid: 1234, cpu: 2, memory: 45 },
+    { name: 'chrome.exe', pid: 2456, cpu: 15, memory: 234 },
+    { name: 'node.exe', pid: 3678, cpu: 5, memory: 89 },
+    { name: 'vscode.exe', pid: 4890, cpu: 8, memory: 156 },
+];
+
+let taskManagerUpdateInterval = null;
+let cpuHistory = [];
+let memoryHistory = [];
+
+function initializeTaskManager() {
+    updateTaskManagerProcesses();
+    updateTaskManagerApplications();
+    initializePerformanceGraphs();
+    
+    // Update every 2 seconds
+    if (taskManagerUpdateInterval) clearInterval(taskManagerUpdateInterval);
+    taskManagerUpdateInterval = setInterval(() => {
+        updateTaskManagerData();
+        updateTaskManagerProcesses();
+        updateTaskManagerApplications();
+        updatePerformanceGraphs();
+    }, 2000);
+}
+
+function updateTaskManagerData() {
+    // Simulate random CPU/memory fluctuations
+    taskManagerProcesses.forEach(proc => {
+        proc.cpu = Math.max(0, Math.min(100, proc.cpu + (Math.random() - 0.5) * 10));
+        proc.memory = Math.max(10, Math.min(500, proc.memory + (Math.random() - 0.5) * 20));
+    });
+}
+
+function updateTaskManagerProcesses() {
+    const tbody = document.getElementById('taskmanager-processes-list');
+    if (!tbody) return;
+    
+    tbody.innerHTML = taskManagerProcesses.map(proc => `
+        <tr>
+            <td>${proc.name}</td>
+            <td>${proc.pid}</td>
+            <td>${Math.round(proc.cpu)}%</td>
+            <td>${Math.round(proc.memory)} MB</td>
+            <td><button onclick="endTaskManagerProcess(${proc.pid})" style="padding: 2px 10px;">End Process</button></td>
+        </tr>
+    `).join('');
+}
+
+function updateTaskManagerApplications() {
+    const tbody = document.getElementById('taskmanager-applications-list');
+    if (!tbody) return;
+    
+    const windows = document.querySelectorAll('.window.active');
+    const apps = Array.from(windows).map(win => ({
+        name: win.querySelector('.window-title')?.textContent || 'Unknown',
+        status: 'Running'
+    }));
+    
+    tbody.innerHTML = apps.map(app => `
+        <tr>
+            <td>${app.name}</td>
+            <td>${app.status}</td>
+            <td><button onclick="alert('Switch to functionality not implemented')" style="padding: 2px 10px;">Switch To</button></td>
+        </tr>
+    `).join('');
+}
+
+function endTaskManagerProcess(pid) {
+    const index = taskManagerProcesses.findIndex(p => p.pid === pid);
+    if (index > -1 && taskManagerProcesses[index].name !== 'System') {
+        taskManagerProcesses.splice(index, 1);
+        updateTaskManagerProcesses();
+        showCatMessage(`Process ${pid} terminated! 💀`);
+    } else {
+        showCatMessage('Cannot terminate system process!');
+    }
+}
+
+function switchTaskManagerTab(tab) {
+    // Hide all tabs
+    document.querySelectorAll('.taskmanager-tab').forEach(t => t.style.display = 'none');
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    
+    // Show selected tab
+    document.getElementById(`taskmanager-${tab}`).style.display = 'block';
+    document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+function initializePerformanceGraphs() {
+    cpuHistory = new Array(50).fill(25);
+    memoryHistory = new Array(50).fill(50);
+    updatePerformanceGraphs();
+}
+
+function updatePerformanceGraphs() {
+    // Update CPU
+    const cpuPercent = Math.round(taskManagerProcesses.reduce((sum, p) => sum + p.cpu, 0) / taskManagerProcesses.length);
+    cpuHistory.push(cpuPercent);
+    if (cpuHistory.length > 50) cpuHistory.shift();
+    document.getElementById('cpu-percent').textContent = cpuPercent;
+    
+    // Update Memory
+    const memoryUsed = Math.round(taskManagerProcesses.reduce((sum, p) => sum + p.memory, 0));
+    const memoryPercent = Math.round((memoryUsed / 512) * 100);
+    memoryHistory.push(memoryPercent);
+    if (memoryHistory.length > 50) memoryHistory.shift();
+    document.getElementById('memory-usage').textContent = memoryUsed;
+    document.getElementById('memory-percent').textContent = memoryPercent;
+    
+    // Draw graphs
+    drawPerformanceGraph('cpu-graph', cpuHistory, '#0f0');
+    drawPerformanceGraph('memory-graph', memoryHistory, '#00f');
+}
+
+function drawPerformanceGraph(canvasId, data, color) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw grid
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+        const y = (i / 5) * height;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    // Draw data
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    data.forEach((value, i) => {
+        const x = (i / (data.length - 1)) * width;
+        const y = height - (value / 100) * height;
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+    ctx.stroke();
+}
+
+// Initialize Task Manager when window opens
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.target.id === 'taskmanager-window' && 
+                mutation.target.classList.contains('active')) {
+                initializeTaskManager();
+            }
+        });
+    });
+    
+    const taskmanagerWindow = document.getElementById('taskmanager-window');
+    if (taskmanagerWindow) {
+        observer.observe(taskmanagerWindow, { attributes: true, attributeFilter: ['class'] });
+    }
+});
+
+// ===== COMMAND PROMPT =====
+let cmdHistory = [];
+let cmdHistoryIndex = -1;
+
+const cmdCommands = {
+    'help': () => `Available commands:
+  help     - Display this help message
+  dir      - List directory contents
+  cd       - Change directory
+  cls      - Clear screen
+  echo     - Display a message
+  ver      - Display version
+  date     - Display current date
+  time     - Display current time
+  whoami   - Display current user
+  ipconfig - Display network configuration
+  ping     - Ping a host
+  tree     - Display directory tree
+  exit     - Close command prompt`,
+    
+    'dir': () => `Volume in drive C is Linux5
+ Directory of C:\\Users\\Guest
+
+01/21/2026  01:00 PM    <DIR>          .
+01/21/2026  01:00 PM    <DIR>          ..
+01/15/2026  03:30 PM    <DIR>          Documents
+01/18/2026  10:15 AM    <DIR>          Downloads
+01/20/2026  09:45 AM    <DIR>          Pictures
+01/19/2026  02:20 PM    <DIR>          Desktop
+               0 File(s)              0 bytes
+               6 Dir(s)  50,123,456,789 bytes free`,
+    
+    'cd': (args) => args.length > 0 ? `Changed directory to: ${args[0]}` : 'C:\\Users\\Guest',
+    'cls': () => { document.getElementById('cmd-output').innerHTML = ''; return ''; },
+    'echo': (args) => args.join(' '),
+    'ver': () => 'Linux/5 [Version 5.0.2026]',
+    'date': () => new Date().toLocaleDateString(),
+    'time': () => new Date().toLocaleTimeString(),
+    'whoami': () => 'LINUX5\\Guest',
+    'ipconfig': () => `Windows IP Configuration
+
+Ethernet adapter Local Area Connection:
+   Connection-specific DNS Suffix  . : 
+   IPv4 Address. . . . . . . . . . . : 192.168.1.100
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 192.168.1.1`,
+    'ping': (args) => args.length > 0 ? 
+        `Pinging ${args[0]} with 32 bytes of data:
+Reply from ${args[0]}: bytes=32 time=15ms TTL=64
+Reply from ${args[0]}: bytes=32 time=14ms TTL=64
+Reply from ${args[0]}: bytes=32 time=16ms TTL=64
+Reply from ${args[0]}: bytes=32 time=15ms TTL=64
+
+Ping statistics for ${args[0]}:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)` : 'Usage: ping <hostname>',
+    'tree': () => `C:\\Users\\Guest
+├── Documents
+│   ├── Work
+│   └── Personal
+├── Downloads
+├── Pictures
+│   ├── Vacation
+│   └── Family
+└── Desktop`,
+    'exit': () => { closeWindow(document.getElementById('cmd-window')); return ''; }
+};
+
+function executeCmdCommand() {
+    const input = document.getElementById('cmd-input');
+    const output = document.getElementById('cmd-output');
+    const command = input.value.trim();
+    
+    if (!command) return;
+    
+    // Add to history
+    cmdHistory.push(command);
+    cmdHistoryIndex = cmdHistory.length;
+    
+    // Display command
+    output.innerHTML += `<div class="cmd-line"><span class="cmd-prompt">C:\\></span> ${command}</div>`;
+    
+    // Parse command
+    const parts = command.split(' ');
+    const cmd = parts[0].toLowerCase();
+    const args = parts.slice(1);
+    
+    // Execute command
+    let result = '';
+    if (cmdCommands[cmd]) {
+        result = cmdCommands[cmd](args);
+    } else {
+        result = `<span class="cmd-error">'${cmd}' is not recognized as an internal or external command.</span>`;
+    }
+    
+    if (result) {
+        output.innerHTML += `<div class="cmd-line">${result}</div>`;
+    }
+    
+    // Clear input and scroll to bottom
+    input.value = '';
+    output.scrollTop = output.scrollHeight;
+}
+
+// Initialize Command Prompt
+document.addEventListener('DOMContentLoaded', () => {
+    const cmdInput = document.getElementById('cmd-input');
+    if (cmdInput) {
+        cmdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (cmdHistoryIndex > 0) {
+                    cmdHistoryIndex--;
+                    cmdInput.value = cmdHistory[cmdHistoryIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (cmdHistoryIndex < cmdHistory.length - 1) {
+                    cmdHistoryIndex++;
+                    cmdInput.value = cmdHistory[cmdHistoryIndex];
+                } else {
+                    cmdHistoryIndex = cmdHistory.length;
+                    cmdInput.value = '';
+                }
+            }
+        });
+        
+        // Show welcome message
+        const cmdOutput = document.getElementById('cmd-output');
+        if (cmdOutput) {
+            cmdOutput.innerHTML = `Linux/5 Command Prompt [Version 5.0.2026]
+(c) 2026 Linux/5 Corporation. All rights reserved.
+
+Type 'help' for a list of commands.
+
+`;
+        }
+    }
+});

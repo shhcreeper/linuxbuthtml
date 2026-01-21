@@ -1373,18 +1373,21 @@ body {
     flex-direction: column;
     height: calc(100% - 28px);
     overflow: auto;
+    align-items: center;
 }
 
 .minesweeper-header {
+    background: #bdbdbd;
+    border: 3px solid #999;
+    padding: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
-    padding: 10px;
-    background: #f0f0f0;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px #7b7b7b;
     flex-shrink: 0;
+    width: 100%;
+    max-width: 500px;
 }
 
 .minesweeper-header button {
@@ -1401,45 +1404,73 @@ body {
     border-radius: 3px;
 }
 
+.mine-counter, .mine-timer {
+    background: #000;
+    color: #f00;
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 5px 10px;
+    border: 2px inset #7b7b7b;
+    min-width: 60px;
+    text-align: center;
+}
+
 #minesweeper-board {
     display: inline-grid;
-    gap: 1px;
-    background: #999;
-    border: 3px ridge #999;
+    gap: 0;
+    background: #bdbdbd;
+    border: 3px solid #999;
+    padding: 10px;
+    box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px #7b7b7b;
     margin: 0 auto;
 }
 
 .mine-cell {
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
     background: #c0c0c0;
-    border: 2px outset #999;
+    border: 2px outset #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 16px;
     cursor: pointer;
     user-select: none;
+    line-height: 24px;
+    text-align: center;
 }
 
-.mine-cell:hover {
-    background: #d0d0d0;
+.mine-cell:active {
+    border-style: inset;
 }
 
 .mine-cell.revealed {
-    background: #e0e0e0;
-    border: 1px solid #999;
+    border: 1px solid #7b7b7b;
+    background: #bdbdbd;
     cursor: default;
 }
 
 .mine-cell.flagged::after {
     content: '🚩';
+    font-size: 14px;
 }
 
 .mine-cell.mine::after {
     content: '💣';
+    font-size: 14px;
 }
+
+/* Number colors for revealed cells */
+.mine-cell[data-count="1"] { color: blue; }
+.mine-cell[data-count="2"] { color: green; }
+.mine-cell[data-count="3"] { color: red; }
+.mine-cell[data-count="4"] { color: darkblue; }
+.mine-cell[data-count="5"] { color: darkred; }
+.mine-cell[data-count="6"] { color: cyan; }
+.mine-cell[data-count="7"] { color: black; }
+.mine-cell[data-count="8"] { color: gray; }
 
 /* Games Grid */
 .games-grid {
@@ -1724,7 +1755,7 @@ body.no-animations * {
 
 #solitaire-board {
     min-height: 500px;
-    background: #0a7029;
+    background: linear-gradient(135deg, #0a4d0a 0%, #0d6e0d 100%);
     padding: 20px;
     border-radius: 5px;
     position: relative;
@@ -1732,25 +1763,31 @@ body.no-animations * {
 
 .solitaire-pile {
     position: absolute;
-    width: 80px;
-    min-height: 110px;
+    width: 71px;
+    min-height: 96px;
     border: 2px dashed rgba(255,255,255,0.3);
     border-radius: 5px;
 }
 
 .solitaire-card {
-    width: 80px;
-    height: 110px;
+    width: 71px;
+    height: 96px;
     background: white;
-    border: 2px solid #000;
+    border: 1px solid #000;
     border-radius: 5px;
     position: absolute;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     padding: 5px;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     user-select: none;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.solitaire-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 2px 5px 8px rgba(0,0,0,0.4);
 }
 
 .solitaire-card.red {
@@ -1762,17 +1799,29 @@ body.no-animations * {
 }
 
 .solitaire-card.facedown {
-    background: linear-gradient(135deg, #0066cc 25%, #0044aa 25%, #0044aa 50%, #0066cc 50%, #0066cc 75%, #0044aa 75%);
-    background-size: 20px 20px;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    background-image: 
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(255,255,255,.1) 10px,
+            rgba(255,255,255,.1) 20px
+        );
+}
+
+.solitaire-card.dragging {
+    opacity: 0.5;
+    z-index: 1000;
 }
 
 .solitaire-card-value {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
 }
 
 .solitaire-card-suit {
-    font-size: 20px;
+    font-size: 36px;
     text-align: center;
     flex: 1;
     display: flex;
@@ -2161,4 +2210,85 @@ body.theme-win11 .start-menu {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
     }
+}
+
+/* Task Manager Styles */
+.taskmanager-tab {
+    padding: 10px;
+}
+
+.taskmanager-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.taskmanager-table th {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+    font-weight: bold;
+}
+
+.taskmanager-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.taskmanager-table tr:hover {
+    background: #f5f5f5;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background: #e0e0e0;
+    border: none;
+    border-right: 1px solid #ccc;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.tab-button.active {
+    background: #fff;
+    border-bottom: 2px solid #0066cc;
+    font-weight: bold;
+}
+
+.tab-button:hover:not(.active) {
+    background: #d0d0d0;
+}
+
+.performance-graph {
+    background: #000;
+    padding: 10px;
+    border-radius: 3px;
+    margin: 10px 0;
+}
+
+.performance-graph canvas {
+    display: block;
+}
+
+/* Command Prompt Styles */
+#cmd-output {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+#cmd-input {
+    font-size: 14px;
+}
+
+.cmd-line {
+    margin: 2px 0;
+}
+
+.cmd-prompt {
+    color: #0f0;
+    font-weight: bold;
+}
+
+.cmd-error {
+    color: #f00;
 }
