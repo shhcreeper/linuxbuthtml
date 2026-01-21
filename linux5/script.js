@@ -10,6 +10,126 @@ let activeWindow = null;
 let startMenuOpen = false;
 let bootSequenceCompleted = false;
 
+// Theme System
+const themes = {
+    'luna-blue': {
+        name: 'Luna Blue',
+        taskbar: 'linear-gradient(to bottom, #3168d5, #1941a5)',
+        titlebar: 'linear-gradient(to bottom, #0a246a, #0a246a, #3168d5)',
+        titlebarInactive: 'linear-gradient(to bottom, #7f95bd, #7f95bd, #a9c1de)',
+        startButton: 'linear-gradient(to bottom, #3c8f3c, #2d6b2d)',
+        windowBorder: '#0a246a',
+        buttonFace: '#ece9d8',
+        menuBg: '#ffffff',
+        desktop: 'radial-gradient(ellipse at center top, #5A8CC7 0%, #3A6EA5 100%)',
+        textColor: '#000000'
+    },
+    'luna-olive': {
+        name: 'Luna Olive',
+        taskbar: 'linear-gradient(to bottom, #7b9971, #4e6548)',
+        titlebar: 'linear-gradient(to bottom, #5a7852, #5a7852, #8cb084)',
+        titlebarInactive: 'linear-gradient(to bottom, #9db09a, #9db09a, #c0d2bd)',
+        startButton: 'linear-gradient(to bottom, #7b9971, #4e6548)',
+        windowBorder: '#5a7852',
+        buttonFace: '#ece9d8',
+        menuBg: '#ffffff',
+        desktop: 'radial-gradient(ellipse at center top, #8FAA7E 0%, #6B8860 100%)',
+        textColor: '#000000'
+    },
+    'luna-silver': {
+        name: 'Luna Silver',
+        taskbar: 'linear-gradient(to bottom, #9db3c7, #7492ab)',
+        titlebar: 'linear-gradient(to bottom, #5b7b97, #5b7b97, #9db3c7)',
+        titlebarInactive: 'linear-gradient(to bottom, #a8b8c8, #a8b8c8, #d0dce5)',
+        startButton: 'linear-gradient(to bottom, #6b8ba3, #4a6a82)',
+        windowBorder: '#5b7b97',
+        buttonFace: '#e5e5e5',
+        menuBg: '#ffffff',
+        desktop: 'radial-gradient(ellipse at center top, #B4C8D9 0%, #8FA8BC 100%)',
+        textColor: '#000000'
+    },
+    'classic': {
+        name: 'Classic',
+        taskbar: '#c0c0c0',
+        titlebar: 'linear-gradient(to right, #000080, #1084d0)',
+        titlebarInactive: 'linear-gradient(to right, #808080, #a0a0a0)',
+        startButton: '#c0c0c0',
+        windowBorder: '#000080',
+        buttonFace: '#c0c0c0',
+        menuBg: '#c0c0c0',
+        desktop: '#008080',
+        textColor: '#000000'
+    },
+    'royale': {
+        name: 'Royale',
+        taskbar: 'linear-gradient(to bottom, #1c3e6e, #0f2442)',
+        titlebar: 'linear-gradient(to bottom, #1c3e6e, #2a5298)',
+        titlebarInactive: 'linear-gradient(to bottom, #6b8ba8, #8ba8c8)',
+        startButton: 'linear-gradient(to bottom, #2e7d32, #1b5e20)',
+        windowBorder: '#1c3e6e',
+        buttonFace: '#e8eef7',
+        menuBg: '#ffffff',
+        desktop: 'radial-gradient(ellipse at center top, #2B5A8C 0%, #1A3A5C 100%)',
+        textColor: '#000000'
+    },
+    'zune': {
+        name: 'Zune Dark',
+        taskbar: 'linear-gradient(to bottom, #3a3a3a, #1a1a1a)',
+        titlebar: 'linear-gradient(to bottom, #2d2d2d, #1a1a1a)',
+        titlebarInactive: 'linear-gradient(to bottom, #4a4a4a, #3a3a3a)',
+        startButton: 'linear-gradient(to bottom, #f47321, #c45a1a)',
+        windowBorder: '#2d2d2d',
+        buttonFace: '#3a3a3a',
+        menuBg: '#2d2d2d',
+        desktop: 'radial-gradient(ellipse at center top, #2d2d2d 0%, #1a1a1a 100%)',
+        textColor: '#ffffff'
+    },
+    'high-contrast': {
+        name: 'High Contrast',
+        taskbar: '#000000',
+        titlebar: '#000080',
+        titlebarInactive: '#808080',
+        startButton: '#000000',
+        windowBorder: '#ffffff',
+        buttonFace: '#000000',
+        menuBg: '#000000',
+        desktop: '#000000',
+        textColor: '#ffffff'
+    }
+};
+
+function applyTheme(themeName) {
+    const theme = themes[themeName];
+    if (!theme) return;
+    
+    const root = document.documentElement;
+    
+    root.style.setProperty('--taskbar-bg', theme.taskbar);
+    root.style.setProperty('--titlebar-bg', theme.titlebar);
+    root.style.setProperty('--titlebar-inactive-bg', theme.titlebarInactive);
+    root.style.setProperty('--start-button-bg', theme.startButton);
+    root.style.setProperty('--window-border', theme.windowBorder);
+    root.style.setProperty('--button-face', theme.buttonFace);
+    root.style.setProperty('--menu-bg', theme.menuBg);
+    root.style.setProperty('--desktop-bg', theme.desktop);
+    root.style.setProperty('--text-color', theme.textColor);
+    
+    // Apply desktop background
+    document.body.style.background = theme.desktop;
+    
+    // Save to localStorage
+    localStorage.setItem('theme', themeName);
+    
+    // Update theme display name if elements exist
+    const themeNameElements = document.querySelectorAll('.current-theme-name');
+    themeNameElements.forEach(el => el.textContent = theme.name);
+}
+
+function loadSavedTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'luna-blue';
+    applyTheme(savedTheme);
+}
+
 // Boot sequence timing constants
 const SKIP_ENABLE_DELAY_MS = 1000;
 const BIOS_DURATION_MS = 2500;
@@ -109,6 +229,9 @@ function finishBootSequence() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Load saved theme first (before boot sequence)
+    loadSavedTheme();
+    
     // Start boot sequence
     startBootSequence();
     
@@ -803,15 +926,7 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
     } catch (e) {
         loading.classList.add('hidden');
         updateBrowserStatus('Error');
-        content.innerHTML = `
-            <div style="padding: 40px; text-align: center;">
-                <h2 style="color: red;">⚠️ Invalid URL</h2>
-                <p>The URL <strong>${url}</strong> is not valid.</p>
-                <p style="margin-top: 20px;">
-                    <button onclick="browserNavigate('welcome')" class="browser-btn">Go to Home Page</button>
-                </p>
-            </div>
-        `;
+        showErrorPage(url, 'Invalid URL', 'The URL you entered is not valid.');
         return;
     }
     
@@ -819,35 +934,7 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
     if (proxyIndex >= proxyList.length) {
         loading.classList.add('hidden');
         updateBrowserStatus('Error: All proxies failed');
-        content.innerHTML = `
-            <div style="padding: 40px; text-align: center;">
-                <h2 style="color: red;">⚠️ Cannot Display Page</h2>
-                <p>The page at <strong>${url}</strong> could not be loaded with any proxy.</p>
-                <p style="font-size: 12px; color: #666; margin-top: 15px;">
-                    <strong>Tried proxies:</strong><br>
-                    ${triedProxies.join('<br>')}
-                </p>
-                <p style="font-size: 12px; color: #666; margin-top: 15px;">
-                    <strong>Possible reasons:</strong>
-                </p>
-                <ul style="text-align: left; display: inline-block; font-size: 12px; color: #666;">
-                    <li>The website blocks embedded viewing (X-Frame-Options)</li>
-                    <li>The website requires WebSocket connections</li>
-                    <li>The website has frame-busting JavaScript</li>
-                    <li>All proxy services are temporarily unavailable</li>
-                </ul>
-                <p style="margin-top: 20px;">
-                    <button onclick="window.open('${url}', '_blank')" class="browser-btn">🔗 Open in New Tab</button>
-                    <button onclick="loadURLWithProxy('${url}', 0, [])" class="browser-btn">🔄 Try Again</button>
-                    <button onclick="browserNavigate('welcome')" class="browser-btn">🏠 Go to Home Page</button>
-                </p>
-                <p style="margin-top: 15px; font-size: 11px; color: #999;">
-                    <strong>Suggested alternatives:</strong> Try <a href="#" onclick="browserLoadURL('https://example.com'); return false;">Example.com</a>, 
-                    <a href="#" onclick="browserLoadURL('https://www.wikipedia.org'); return false;">Wikipedia</a>, or 
-                    <a href="#" onclick="browserLoadURL('https://www.google.com'); return false;">Google</a>
-                </p>
-            </div>
-        `;
+        showErrorPage(url, 'Cannot Display Page', `This website couldn't be loaded through the proxy. Tried proxies: ${triedProxies.join(', ')}`);
         showCatMessage("Oops! All proxies failed. Some sites really don't like proxies! 😿");
         return;
     }
@@ -855,18 +942,18 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
     const proxy = proxyList[proxyIndex];
     triedProxies.push(proxy.name);
     
-    // Show loading state
-    updateBrowserStatus(`Loading via ${proxy.name} (${proxyIndex + 1}/${proxyList.length})...`);
+    // Show loading state with better feedback
+    updateBrowserStatus(`Connecting... (${proxyIndex + 1}/${proxyList.length})`);
     loading.classList.remove('hidden');
     
     // Clear content and show loading spinner
     content.innerHTML = `
         <div style="text-align: center; padding: 40px;">
             <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #0066cc; border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
-            <p>Loading ${url}...</p>
-            <p style="font-size: 12px; color: #666;">Using ${proxy.name} proxy (${proxyIndex + 1}/${proxyList.length})</p>
+            <p style="font-size: 16px; font-weight: bold;">Loading page content...</p>
+            <p style="font-size: 12px; color: #666;">Trying ${proxy.name} proxy (${proxyIndex + 1} of ${proxyList.length})</p>
+            <p style="font-size: 11px; color: #999; margin-top: 10px;">${url}</p>
             <p style="font-size: 10px; color: #999; margin-top: 10px;">Attempted: ${triedProxies.join(', ')}</p>
-            <p style="font-size: 10px; color: #999; margin-top: 5px;">This may take a few seconds...</p>
         </div>
     `;
     
@@ -877,6 +964,8 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
         // Set timeout for fetch (15 seconds for better success rate)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        updateBrowserStatus(`Loading via ${proxy.name}...`);
         
         const response = await fetch(proxyURL, { 
             signal: controller.signal,
@@ -890,6 +979,7 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
             throw new Error(`HTTP ${response.status}`);
         }
         
+        updateBrowserStatus('Rendering...');
         let html = await response.text();
         
         // Hide loading
@@ -898,20 +988,12 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
         // Advanced proxy fixes for frame-busting and URL rewriting
         html = processProxiedHTML(html, url);
         
-        // Clear content first
-        content.innerHTML = '';
+        // Display content using multiple methods
+        const success = displayContentInIframe(html, content);
         
-        // Create iframe and inject HTML using srcdoc (avoids X-Frame-Options)
-        const iframe = document.createElement('iframe');
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
-        
-        // Use srcdoc to inject HTML
-        iframe.srcdoc = html;
-        
-        content.appendChild(iframe);
+        if (!success) {
+            throw new Error('Failed to display content');
+        }
         
         // Update status to Done only after successful load
         updateBrowserStatus(`Done - Loaded via ${proxy.name}`);
@@ -929,10 +1011,97 @@ async function loadURLWithProxy(url, proxyIndex = currentProxyIndex, triedProxie
         
         // Don't show error, just try next proxy
         loading.classList.remove('hidden');
+        updateBrowserStatus(`Trying next proxy...`);
         
         // Try next proxy
         await loadURLWithProxy(url, proxyIndex + 1, triedProxies);
     }
+}
+
+function showErrorPage(url, title, message) {
+    const content = document.getElementById('browser-content');
+    const errorHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {
+                    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                    text-align: center;
+                }
+                .error-box {
+                    background: rgba(255,255,255,0.1);
+                    padding: 40px;
+                    border-radius: 20px;
+                    backdrop-filter: blur(10px);
+                    max-width: 500px;
+                }
+                h1 { font-size: 48px; margin-bottom: 10px; }
+                h2 { font-size: 24px; margin-bottom: 20px; }
+                p { font-size: 16px; opacity: 0.9; }
+                button {
+                    background: white;
+                    color: #667eea;
+                    border: none;
+                    padding: 12px 30px;
+                    font-size: 16px;
+                    border-radius: 25px;
+                    cursor: pointer;
+                    margin: 10px;
+                    font-weight: bold;
+                }
+                button:hover { transform: scale(1.05); transition: 0.2s; }
+                .url { 
+                    background: rgba(0,0,0,0.2); 
+                    padding: 10px; 
+                    border-radius: 10px; 
+                    word-break: break-all;
+                    margin: 15px 0;
+                    font-size: 14px;
+                }
+                ul {
+                    text-align: left;
+                    display: inline-block;
+                    margin: 10px 0;
+                }
+                li {
+                    margin: 5px 0;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="error-box">
+                <h1>🚫</h1>
+                <h2>${title}</h2>
+                <div class="url">${url}</div>
+                <p>${message}</p>
+                <p style="margin-top: 15px;">This can happen because:</p>
+                <ul>
+                    <li>The site blocks proxy access</li>
+                    <li>The site requires JavaScript features</li>
+                    <li>Network connection issues</li>
+                    <li>The proxy service is temporarily unavailable</li>
+                </ul>
+                <div style="margin-top: 20px;">
+                    <button onclick="parent.location.reload()">🔄 Try Again</button>
+                    <button onclick="parent.browserNavigate('welcome')">🏠 Go Home</button>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button onclick="window.open('${url}', '_blank')">🔗 Open in New Tab</button>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    displayContentInIframe(errorHtml, content);
 }
 
 function processProxiedHTML(html, originalURL) {
@@ -940,42 +1109,66 @@ function processProxiedHTML(html, originalURL) {
         const urlObj = new URL(originalURL);
         const baseURL = `${urlObj.protocol}//${urlObj.host}`;
         
-        // Remove frame-busting code (anti-iframe scripts)
-        html = html.replace(/if\s*\(\s*top\s*[!=]==?\s*self\s*\)/gi, 'if(false)');
-        html = html.replace(/if\s*\(\s*window\s*[!=]==?\s*window\.top\s*\)/gi, 'if(false)');
-        html = html.replace(/if\s*\(\s*parent\s*[!=]==?\s*self\s*\)/gi, 'if(false)');
-        html = html.replace(/if\s*\(\s*top\s*[!=]==?\s*window\s*\)/gi, 'if(false)');
-        html = html.replace(/window\.top\.location/gi, 'window.location');
-        html = html.replace(/top\.location/gi, 'window.location');
-        html = html.replace(/parent\.location/gi, 'window.location');
+        // 1. Add DOCTYPE if missing
+        if (!html.toLowerCase().includes('<!doctype')) {
+            html = '<!DOCTYPE html>' + html;
+        }
+        
+        // 2. Inject base tag for relative URLs (CRITICAL for preventing black pages)
+        const baseTag = `<base href="${baseURL}/">`;
+        if (html.includes('<head>')) {
+            html = html.replace('<head>', '<head>' + baseTag);
+        } else if (html.includes('<HEAD>')) {
+            html = html.replace('<HEAD>', '<HEAD>' + baseTag);
+        } else {
+            html = baseTag + html;
+        }
+        
+        // 3. Fix ALL relative URLs to prevent black pages from missing resources
+        // Fix src="/path" (not src="//")
+        html = html.replace(/src=(["'])\/(?!\/)/gi, `src=$1${baseURL}/`);
+        // Fix href="/path" (not href="//")
+        html = html.replace(/href=(["'])\/(?!\/)/gi, `href=$1${baseURL}/`);
+        // Fix url(/path) in CSS - handle with or without quotes
+        html = html.replace(/url\((["']?)\/(?!\/)/gi, `url($1${baseURL}/`);
+        // Fix src="//domain" protocol-relative URLs
+        html = html.replace(/src=(["'])\/\//gi, 'src=$1https://');
+        // Fix href="//domain" protocol-relative URLs
+        html = html.replace(/href=(["'])\/\//gi, 'href=$1https://');
+        
+        // 4. Remove frame-busting code more thoroughly
+        html = html.replace(/if\s*\(\s*top\s*!==?\s*self\s*\)/gi, 'if(false)');
+        html = html.replace(/if\s*\(\s*window\s*!==?\s*window\.top\s*\)/gi, 'if(false)');
+        html = html.replace(/if\s*\(\s*parent\s*!==?\s*self\s*\)/gi, 'if(false)');
+        html = html.replace(/if\s*\(\s*self\s*!==?\s*top\s*\)/gi, 'if(false)');
+        html = html.replace(/if\s*\(\s*top\s*!==?\s*window\s*\)/gi, 'if(false)');
+        html = html.replace(/top\.location\s*=/gi, '//top.location=');
+        html = html.replace(/window\.top\.location\s*=/gi, '//window.top.location=');
+        html = html.replace(/parent\.location\s*=/gi, '//parent.location=');
         
         // Remove X-Frame-Options detection
         html = html.replace(/['"]X-Frame-Options['"]/gi, '"X-Disabled-Header"');
         
-        // Inject base tag to fix relative URLs
-        if (!html.includes('<base')) {
-            html = html.replace(/<head>/i, `<head><base href="${baseURL}/">`);
-        } else {
-            // Update existing base tag
-            html = html.replace(/<base\s+href=["'][^"']*["']/gi, `<base href="${baseURL}/"`);
-        }
-        
-        // Fix relative URLs in href and src attributes (only those starting with / but not //)
-        html = html.replace(/href=["']\/(?!\/)([^"']*?)["']/gi, `href="${baseURL}/$1"`);
-        html = html.replace(/src=["']\/(?!\/)([^"']*?)["']/gi, `src="${baseURL}/$1"`);
-        
-        // Add viewport meta if missing
+        // 5. Add viewport meta tag
         if (!html.includes('viewport')) {
-            html = html.replace(/<head>/i, '<head><meta name="viewport" content="width=device-width, initial-scale=1">');
+            html = html.replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">');
         }
         
-        // Add CSP meta to allow loading resources (but more permissive)
-        const cspMeta = '<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; frame-ancestors *;">';
-        if (!html.includes('Content-Security-Policy')) {
-            html = html.replace(/<head>/i, '<head>' + cspMeta);
+        // 6. Add default styles to prevent black pages (CRITICAL FIX)
+        const defaultStyles = `
+            <style>
+                html, body { 
+                    background-color: #fff !important; 
+                    color: #000 !important;
+                    min-height: 100vh;
+                }
+            </style>
+        `;
+        if (/<\/head>/i.test(html)) {
+            html = html.replace(/<\/head>/i, defaultStyles + '</head>');
         }
         
-        // Inject script to disable additional frame-busting attempts
+        // 7. Inject script to disable additional frame-busting attempts
         const antiFrameBustScript = `
             <script>
             (function() {
@@ -992,13 +1185,57 @@ function processProxiedHTML(html, originalURL) {
             })();
             </script>
         `;
-        html = html.replace(/<head>/i, '<head>' + antiFrameBustScript);
+        if (/<head>/i.test(html)) {
+            html = html.replace(/<head>/i, '<head>' + antiFrameBustScript);
+        }
         
     } catch (e) {
         console.error('Error processing HTML:', e);
     }
     
     return html;
+}
+
+function displayContentInIframe(html, container) {
+    // Clear content first
+    container.innerHTML = '';
+    
+    // Create iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+    
+    container.appendChild(iframe);
+    
+    // Method 1: srcdoc (preferred for avoiding X-Frame-Options)
+    try {
+        iframe.srcdoc = html;
+        return true;
+    } catch (e) {
+        console.log('srcdoc method failed, trying blob URL');
+    }
+    
+    // Method 2: Blob URL (fallback)
+    try {
+        const blob = new Blob([html], { type: 'text/html' });
+        iframe.src = URL.createObjectURL(blob);
+        return true;
+    } catch (e) {
+        console.log('Blob URL method failed, trying document.write');
+    }
+    
+    // Method 3: document.write (last resort)
+    try {
+        iframe.contentDocument.open();
+        iframe.contentDocument.write(html);
+        iframe.contentDocument.close();
+        return true;
+    } catch (e) {
+        console.error('All display methods failed');
+        return false;
+    }
 }
 
 function updateBrowserStatus(text) {
@@ -2743,6 +2980,13 @@ function setWallpaper(type, value, position) {
 }
 
 function applyDisplaySettings() {
+    // Apply theme
+    const themeSelector = document.getElementById('theme-selector');
+    if (themeSelector) {
+        const selectedTheme = themeSelector.value;
+        applyTheme(selectedTheme);
+    }
+    
     const type = document.getElementById('wallpaper-type').value;
     const position = document.getElementById('wallpaper-position').value;
     const fontsize = document.getElementById('display-fontsize').value;
@@ -2780,6 +3024,28 @@ function applyDisplaySettings() {
     showCatMessage('Display settings applied! 🖥️');
 }
 
+function previewTheme(themeName) {
+    const theme = themes[themeName];
+    if (!theme) return;
+    
+    const preview = document.getElementById('theme-preview');
+    const titlebar = preview.querySelector('.preview-titlebar');
+    const taskbar = preview.querySelector('.preview-taskbar');
+    
+    titlebar.style.background = theme.titlebar;
+    taskbar.style.background = theme.taskbar;
+    preview.style.background = theme.desktop;
+}
+
+function loadThemeSettings() {
+    const savedTheme = localStorage.getItem('theme') || 'luna-blue';
+    const themeSelector = document.getElementById('theme-selector');
+    if (themeSelector) {
+        themeSelector.value = savedTheme;
+        previewTheme(savedTheme);
+    }
+}
+
 // Initialize wallpaper options when display settings window opens
 document.addEventListener('DOMContentLoaded', () => {
     const displayWindow = document.getElementById('display-settings-window');
@@ -2787,6 +3053,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mutations.forEach((mutation) => {
             if (mutation.attributeName === 'class' && displayWindow.classList.contains('active')) {
                 updateWallpaperOptions();
+                loadThemeSettings();
             }
         });
     });

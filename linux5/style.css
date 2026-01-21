@@ -1,3 +1,16 @@
+:root {
+    /* Theme variables - defaults to Luna Blue */
+    --taskbar-bg: linear-gradient(to bottom, #3168d5, #1941a5);
+    --titlebar-bg: linear-gradient(to bottom, #0a246a, #0a246a, #3168d5);
+    --titlebar-inactive-bg: linear-gradient(to bottom, #7f95bd, #7f95bd, #a9c1de);
+    --start-button-bg: linear-gradient(to bottom, #3c8f3c, #2d6b2d);
+    --window-border: #0a246a;
+    --button-face: #ece9d8;
+    --menu-bg: #ffffff;
+    --desktop-bg: radial-gradient(ellipse at center top, #5A8CC7 0%, #3A6EA5 100%);
+    --text-color: #000000;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -8,10 +21,9 @@ body {
     font-family: 'Tahoma', 'Segoe UI', sans-serif;
     overflow: hidden;
     height: 100vh;
-    background: #5A8CC7;
-    background-image: 
-        radial-gradient(ellipse at center top, #5A8CC7 0%, #3A6EA5 100%);
+    background: var(--desktop-bg);
     user-select: none;
+    color: var(--text-color);
 }
 
 /* Boot Sequence Styles */
@@ -350,7 +362,7 @@ body {
 }
 
 .window-titlebar {
-    background: linear-gradient(to bottom, #0997FF 0%, #0053EE 50%, #0050EE 50%, #06F 100%);
+    background: var(--titlebar-bg);
     color: white;
     padding: 4px 8px;
     display: flex;
@@ -361,6 +373,10 @@ body {
     height: 28px;
     font-size: 12px;
     font-weight: bold;
+}
+
+.window:not(.active) .window-titlebar {
+    background: var(--titlebar-inactive-bg);
 }
 
 .window-title {
@@ -456,7 +472,7 @@ body {
     left: 0;
     right: 0;
     height: 40px;
-    background: linear-gradient(to bottom, #2E5BDC 0%, #1F43B5 10%, #1941B3 90%, #0D2873 100%);
+    background: var(--taskbar-bg);
     display: flex;
     align-items: center;
     padding: 0 5px;
@@ -467,7 +483,7 @@ body {
 #start-button {
     height: 32px;
     padding: 0 15px;
-    background: linear-gradient(to bottom, #5ECD5E 0%, #3BB33B 50%, #36A936 50%, #2B8E2B 100%);
+    background: var(--start-button-bg);
     border: 1px solid #1B661B;
     border-radius: 6px;
     color: white;
@@ -1678,6 +1694,37 @@ body.no-animations * {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+}
+
+.theme-selector {
+    margin: 10px 0;
+}
+
+.theme-preview {
+    width: 100%;
+    height: 80px;
+    border: 2px solid #999;
+    margin: 10px 0;
+    padding: 5px;
+    position: relative;
+    background: #fff;
+}
+
+.preview-titlebar {
+    height: 20px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    background: var(--titlebar-bg);
+}
+
+.preview-taskbar {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    right: 5px;
+    height: 15px;
+    border-radius: 2px;
+    background: var(--taskbar-bg);
 }
 
 #wallpaper-options input[type="color"],
