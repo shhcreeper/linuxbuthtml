@@ -95,6 +95,23 @@ const themes = {
         menuBg: '#000000',
         desktop: '#000000',
         textColor: '#ffffff'
+    },
+    'win11': {
+        name: 'Windows 11',
+        taskbar: 'rgba(243, 243, 243, 0.5)',
+        titlebar: '#f3f3f3',
+        titlebarInactive: '#e0e0e0',
+        startButton: 'transparent',
+        windowBorder: '#e0e0e0',
+        buttonFace: '#f3f3f3',
+        menuBg: 'rgba(242, 242, 242, 0.8)',
+        desktop: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        textColor: '#000000',
+        accent: '#0067c0',
+        accentLight: '#4cc2ff',
+        borderRadius: '8px',
+        backdropFilter: 'blur(40px) saturate(150%)',
+        menuBackdropFilter: 'blur(60px) saturate(200%)'
     }
 };
 
@@ -114,8 +131,22 @@ function applyTheme(themeName) {
     root.style.setProperty('--desktop-bg', theme.desktop);
     root.style.setProperty('--text-color', theme.textColor);
     
+    // Windows 11 specific properties
+    if (theme.accent) root.style.setProperty('--accent-color', theme.accent);
+    if (theme.accentLight) root.style.setProperty('--accent-light', theme.accentLight);
+    if (theme.borderRadius) root.style.setProperty('--window-radius', theme.borderRadius);
+    if (theme.backdropFilter) root.style.setProperty('--taskbar-blur', theme.backdropFilter);
+    if (theme.menuBackdropFilter) root.style.setProperty('--menu-blur', theme.menuBackdropFilter);
+    
     // Apply desktop background
     document.body.style.background = theme.desktop;
+    
+    // Add/remove Windows 11 theme class
+    if (themeName === 'win11') {
+        document.body.classList.add('theme-win11');
+    } else {
+        document.body.classList.remove('theme-win11');
+    }
     
     // Save to localStorage
     localStorage.setItem('theme', themeName);
