@@ -1537,11 +1537,17 @@ function initializeBrowser() {
 }
 
 // Address bar functionality
+let browserAddressBarSetup = false; // Prevent duplicate setup
+
 function setupBrowserAddressBar() {
+  if (browserAddressBarSetup) return; // Already setup
+  
   const addressBar = document.getElementById('browser-address');
   const goButton = document.querySelector('.browser-toolbar button[title="Go"]');
   
   if (!addressBar) return;
+  
+  browserAddressBarSetup = true;
   
   // Remove inline handler and add proper event listener
   addressBar.removeAttribute('onkeypress');
@@ -1556,17 +1562,15 @@ function setupBrowserAddressBar() {
     }
   });
   
-  // Go button click (if not already handled)
+  // Go button click - remove onclick and add event listener
   if (goButton) {
-    const existingOnClick = goButton.getAttribute('onclick');
-    if (!existingOnClick || !existingOnClick.includes('browserLoadURL')) {
-      goButton.addEventListener('click', () => {
-        const url = addressBar.value.trim();
-        if (url) {
-          browserLoadURL(url);
-        }
-      });
-    }
+    goButton.removeAttribute('onclick');
+    goButton.addEventListener('click', () => {
+      const url = addressBar.value.trim();
+      if (url) {
+        browserLoadURL(url);
+      }
+    });
   }
   
   // Ctrl+L to focus address bar (like real browsers)
